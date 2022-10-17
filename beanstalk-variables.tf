@@ -158,3 +158,12 @@ variable "beanstalk_instance_volume_type" {
   type    = string
   default = "gp2"
 }
+
+variable "extra_settings" {
+  type = list(object({
+    name      = string
+    namespace = string
+    resource  = optional(string)
+    value     = string
+  }))
+}

@@ -694,15 +694,35 @@ locals {
     }
   ]
 
-  image_id = var.beanstalk_ami_id != "" ? [
-    {
-      name      = "ImageId"
-      namespace = "aws:autoscaling:launchconfiguration"
-      resource  = ""
-      value     = var.beanstalk_ami_id
-    }
-  ] : []
+  image_id = var.beanstalk_ami_id != "" ? tomap({
+    "aws:autoscaling:launchconfiguration/ImageId" = [
+      {
+        name      = "ImageId"
+        namespace = "aws:autoscaling:launchconfiguration"
+        resource  = ""
+        value     = var.beanstalk_ami_id
+      }
+  ] }) : tomap({})
 
+  eb_initial_map = {
+    for aitem in local.eb_settings_initial :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  }
+  eb_port_mappings_map = {
+    for aitem in local.port_mappings_local :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  }
 
-  eb_settings = concat(local.eb_settings_initial, local.image_id, local.port_mappings_local, local.ssl_mappings)
+  eb_ssl_settings_map = {
+    for aitem in local.port_mappings_local :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  }
+
+  eb_extra_settings_map = {
+    for aitem in var.extra_settings :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  }
+
+  eb_settings_map = merge(local.eb_initial_map, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map)
+  eb_settings     = values(local.eb_settings_map)
 }

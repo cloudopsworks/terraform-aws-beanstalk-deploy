@@ -32,3 +32,16 @@ override.tf.json
 .tronador
 tronador/
 .terraform.lock.hcl
+
+# misc
+.DS_Store
+
+# IntelliJ idea
+.idea/
+*.iml
+
+# Eclipse JDT
+.project
+.settings/
+.classpath
+.factorypath
