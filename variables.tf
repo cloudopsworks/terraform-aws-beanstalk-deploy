@@ -4,7 +4,8 @@
 #            Distributed Under Apache v2.0 License
 #
 variable "release_name" {
-  type = string
+  type        = string
+  description = "(required) The Release Name that will be used to name all resources."
 }
 
 # variable "source_name" {
@@ -29,9 +30,11 @@ variable "extra_files" {
   type        = list(string)
   default     = []
   description = "(optional) List of source files where to pull info."
+  nullable    = false
 }
 
 variable "application_version_label" {
   type        = string
   description = "(required) Application version label to apply to environment"
+  nullable    = false
 }

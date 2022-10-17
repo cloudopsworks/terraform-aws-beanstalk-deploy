@@ -7,6 +7,7 @@
 variable "solution_stack" {
   type        = string
   default     = "java"
+  nullable    = false
   description = <<EOL
 (required) Specify solution stack for Elastic Beanstalk
 Solution stack is one of:
