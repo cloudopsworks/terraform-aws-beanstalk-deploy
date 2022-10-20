@@ -44,11 +44,11 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
   version_label       = var.application_version_label
 
   dynamic "setting" {
-    for_each = local.eb_settings
+    for_each = local.eb_settings_map
     content {
       name      = setting.value.name
       namespace = setting.value.namespace
-      resource  = setting.value.resource
+      #resource  = setting.value["resource"]
       value     = setting.value.value
     }
   }
