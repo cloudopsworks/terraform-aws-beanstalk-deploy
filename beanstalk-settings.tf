@@ -725,5 +725,5 @@ locals {
   })
 
   eb_settings_map = merge(local.eb_initial_map, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map)
-  eb_settings     = values(local.eb_settings_map)
+  eb_settings     = tomap(local.eb_settings_map)
 }
