@@ -88,13 +88,14 @@ variable "beanstalk_ec2_key" {
   type        = string
   default     = ""
   description = "(optional) Existing EC2 Key for connecting via SSH. Default is null (connect may be possible through SSM)."
-  nullable    = true
+  nullable    = false
 }
 
 variable "beanstalk_ami_id" {
   type        = string
   default     = ""
   description = "(optional) Fix AMI which elasticbeanstalk is based on"
+  nullable    = false
 }
 
 variable "beanstalk_instance_port" {

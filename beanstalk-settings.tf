@@ -725,7 +725,4 @@ locals {
 
   eb_settings_map = coalesce(merge(local.eb_initial_map, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map))
   eb_settings     = values(local.eb_settings_map)
-#  eb_settings_txt = [ for k, v in local.eb_settings_map:
-#    "${k} ==> ${yamlencode(v)}"
-#  ]
 }
