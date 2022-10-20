@@ -694,7 +694,7 @@ locals {
     }
   ]
 
-  image_id = var.beanstalk_ami_id != "" || var.beanstalk_ami_id != null ? {
+  image_id = var.beanstalk_ami_id != "" && var.beanstalk_ami_id != null ? {
     "aws:autoscaling:launchconfiguration/ImageId" = {
         name      = "ImageId"
         namespace = "aws:autoscaling:launchconfiguration"
