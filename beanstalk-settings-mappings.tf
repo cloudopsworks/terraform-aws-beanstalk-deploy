@@ -5,23 +5,8 @@
 #
 locals {
 
-  port_mappings_map = flatten([
-    for m in var.port_mappings :
-    [
-      {
-        name               = m.name
-        from_port          = m.from_port
-        to_port            = m.to_port
-        protocol           = m.protocol == null ? "HTTP" : m.protocol
-        backend_protocol   = m.backend_protocol == null ? "HTTP" : m.backend_protocol
-        health_http_status = m.health_http_status == null ? "200-304" : m.health_http_status
-        stickiness_cookie  = m.stickiness_cookie == null ? "lb_cookie" : m.stickiness_cookie
-      }
-    ]
-  ])
-
   port_mappings_default = [
-    for m in local.port_mappings_map :
+    for m in var.port_mappings :
     [
       {
         name      = "DefaultProcess"
@@ -124,7 +109,7 @@ locals {
   ]
 
   port_mappings_init = [
-    for m in local.port_mappings_map :
+    for m in var.port_mappings :
     [{
       name      = "DefaultProcess"
       namespace = "aws:elbv2:listener:${m.from_port}"
@@ -225,7 +210,7 @@ locals {
   ]
 
   ssl_mappings_init = [
-    for m in local.port_mappings_map :
+    for m in var.port_mappings :
     [
       {
         name      = "SSLPolicy"

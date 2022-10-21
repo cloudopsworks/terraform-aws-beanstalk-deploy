@@ -121,20 +121,20 @@ variable "beanstalk_service_role" {
 
 variable "port_mappings" {
   type = list(object({
-    name               = string,
-    from_port          = number,
-    to_port            = number,
-    protocol           = optional(string)
-    backend_protocol   = optional(string)
-    health_http_status = optional(string)
-    stickiness_cookie  = optional(string)
+    name               = string
+    from_port          = number
+    to_port            = number
+    protocol           = optional(string, "HTTP")
+    backend_protocol   = optional(string, "HTTP")
+    health_http_status = optional(string, "200-304")
+    stickiness_cookie  = optional(string, "lb_cookie")
   }))
   default = [
     {
       name      = "default"
       from_port = 80
       to_port   = 8080
-    }
+    },
   ]
   description = "(optional) Mappings of Load balancer ports."
   nullable    = false
