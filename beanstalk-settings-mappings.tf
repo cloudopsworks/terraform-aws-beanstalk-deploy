@@ -228,6 +228,6 @@ locals {
   ]
 
   ssl_mappings        = flatten(local.ssl_mappings_init)
-  port_mappings_local = flatten(concat(local.port_mappings_default, local.port_mappings_init))
+  port_mappings_local = flatten(concat(local.port_mappings_default, local.port_mappings_init, local.ssl_mappings))
 
 }
