@@ -714,7 +714,7 @@ locals {
   })
 
   eb_ssl_settings_map = tomap({
-    for aitem in local.port_mappings_local :
+    for aitem in local.ssl_mappings :
     "${aitem.namespace}/${aitem.name}" => tomap(aitem)
   })
 
