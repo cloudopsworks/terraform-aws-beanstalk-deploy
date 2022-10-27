@@ -49,7 +49,7 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
       name      = setting.value.name
       namespace = setting.value.namespace
       resource  = setting.value.resource
-      value = setting.value.value
+      value     = setting.value.value
     }
   }
 }

@@ -584,12 +584,12 @@ locals {
       resource  = ""
       value     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.beanstalk_service_role}"
     }
-#    , {
-#      name      = "ServiceRoleForManagedUpdates"
-#      namespace = "aws:elasticbeanstalk:managedactions"
-#      resource  = ""
-#      value     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.beanstalk_service_role}"
-#    }
+    #    , {
+    #      name      = "ServiceRoleForManagedUpdates"
+    #      namespace = "aws:elasticbeanstalk:managedactions"
+    #      resource  = ""
+    #      value     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.beanstalk_service_role}"
+    #    }
     , {
       name      = "SpotFleetOnDemandAboveBasePercentage"
       namespace = "aws:ec2:instances"

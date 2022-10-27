@@ -4,14 +4,14 @@
 #            Distributed Under Apache v2.0 License
 #
 variable "private_subnets" {
-  type        = list(string)
+  type        = set(string)
   default     = []
   description = "(optional) Private subnets where the LB (if internal) and instances will reside."
   nullable    = false
 }
 
 variable "public_subnets" {
-  type        = list(string)
+  type        = set(string)
   default     = []
   description = "(optional) Public subnets where the LB exposed to Internet will reside, this will be validated if *load_balancer_public=true*"
   nullable    = false
