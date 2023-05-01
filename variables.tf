@@ -38,3 +38,9 @@ variable "application_version_label" {
   description = "(required) Application version label to apply to environment"
   nullable    = false
 }
+
+variable "extra_tags" {
+  type        = map(string)
+  description = "(optional) Map of extra tags to add to the resources."
+  default     = {}
+}

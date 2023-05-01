@@ -52,4 +52,10 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
       value     = setting.value.value
     }
   }
+
+  tags = merge(var.extra_tags, {
+    Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+    Namespace   = var.namespace
+    Release     = var.release_name
+  })
 }
