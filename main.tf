@@ -35,6 +35,8 @@ data "aws_elastic_beanstalk_solution_stack" "solution_stack" {
   name_regex = local.selected_solution
 }
 
+data "aws_elastic_beanstalk_hosted_zone" "current" {}
+
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
   name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
   application         = data.aws_elastic_beanstalk_application.application.name

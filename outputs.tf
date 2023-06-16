@@ -2,6 +2,10 @@ output "environment_cname" {
   value = aws_elastic_beanstalk_environment.beanstalk_environment.cname
 }
 
+output "environment_zone_id" {
+  value = data.aws_elastic_beanstalk_hosted_zone.current.id
+}
+
 data "aws_alb" "beanstalk_alb" {
   arn = aws_elastic_beanstalk_environment.beanstalk_environment.load_balancers[0]
 }
