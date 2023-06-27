@@ -17,7 +17,7 @@ locals {
       protocol    = try(item.protocol, "-1")
       description = try(item.description, "Allow traffic")
       cidr_block  = item.cidr_block
-    } if can(item.cidr_block)
+    } if item.cidr_block != null
   }
   lb_ingresses_sg = {
     for item in var.beanstalk_lb_sg : format("%s-%s-%s",item.security_group,try(item.from_port, "0"),try(item.protocol, "0")) => {
@@ -26,7 +26,7 @@ locals {
       protocol       = try(item.protocol, "-1")
       description    = try(item.description, "Allow traffic")
       security_group = item.security_group
-    } if can(item.security_group)
+    } if item.security_group != null
   }
   tgt_ingresses_cidr = {
     for item in var.beanstalk_target_sg : format("%s-%s-%s",item.cidr_block,try(item.from_port, "0"),try(item.protocol, "0")) => {
@@ -35,7 +35,7 @@ locals {
       protocol    = try(item.protocol, "-1")
       description = try(item.description, "Allow traffic")
       cidr_block  = item.cidr_block
-    } if can(item.cidr_block)
+    } if item.cidr_block != null
   }
   tgt_ingresses_sg_init = {
     for item in var.beanstalk_target_sg : format("%s-%s-%s",item.security_group,try(item.from_port, "0"),try(item.protocol, "0")) => {
@@ -44,7 +44,7 @@ locals {
       protocol       = try(item.protocol, "-1")
       description    = try(item.description, "Allow traffic")
       security_group = item.security_group
-    } if can(item.security_group)
+    } if item.security_group != null
   }
 
   tgt_ingresses_sg_mappings = {
