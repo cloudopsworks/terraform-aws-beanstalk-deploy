@@ -11,7 +11,7 @@ locals {
   }
 
   lb_ingresses_cidr = {
-    for item in var.beanstalk_lb_sg : item.cidr_block => {
+    for item in var.beanstalk_lb_sg : format("%s-%s-%s",item.cidr_block,try(item.from_port, "0"),try(item.protocol, "0")) => {
       from_port   = try(item.from_port, "0")
       to_port     = try(item.to_port, "0")
       protocol    = try(item.protocol, "-1")
@@ -20,7 +20,7 @@ locals {
     } if can(item.cidr_block)
   }
   lb_ingresses_sg = {
-    for item in var.beanstalk_lb_sg : item.security_group => {
+    for item in var.beanstalk_lb_sg : format("%s-%s-%s",item.security_group,try(item.from_port, "0"),try(item.protocol, "0")) => {
       from_port      = try(item.from_port, "0")
       to_port        = try(item.to_port, "0")
       protocol       = try(item.protocol, "-1")
@@ -29,7 +29,7 @@ locals {
     } if can(item.security_group)
   }
   tgt_ingresses_cidr = {
-    for item in var.beanstalk_target_sg : item.cidr_block => {
+    for item in var.beanstalk_target_sg : format("%s-%s-%s",item.cidr_block,try(item.from_port, "0"),try(item.protocol, "0")) => {
       from_port   = try(item.from_port, "0")
       to_port     = try(item.to_port, "0")
       protocol    = try(item.protocol, "-1")
@@ -38,7 +38,7 @@ locals {
     } if can(item.cidr_block)
   }
   tgt_ingresses_sg_init = {
-    for item in var.beanstalk_target_sg : item.security_group => {
+    for item in var.beanstalk_target_sg : format("%s-%s-%s",item.security_group,try(item.from_port, "0"),try(item.protocol, "0")) => {
       from_port      = try(item.from_port, "0")
       to_port        = try(item.to_port, "0")
       protocol       = try(item.protocol, "-1")
