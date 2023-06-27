@@ -11,7 +11,7 @@ locals {
   }
 
   lb_ingresses_cidr = {
-    for item in var.beanstalk_lb_sg : format("%s-%s-%s",item.cidr_block,try(item.from_port, "0"),try(item.protocol, "0")) => {
+    for item in var.beanstalk_lb_sg : format("%s-%s-%s", item.cidr_block, try(item.from_port, "0"), try(item.protocol, "0")) => {
       from_port   = try(item.from_port, "0")
       to_port     = try(item.to_port, "0")
       protocol    = try(item.protocol, "-1")
@@ -20,7 +20,7 @@ locals {
     } if item.cidr_block != null
   }
   lb_ingresses_sg = {
-    for item in var.beanstalk_lb_sg : format("%s-%s-%s",item.security_group,try(item.from_port, "0"),try(item.protocol, "0")) => {
+    for item in var.beanstalk_lb_sg : format("%s-%s-%s", item.security_group, try(item.from_port, "0"), try(item.protocol, "0")) => {
       from_port      = try(item.from_port, "0")
       to_port        = try(item.to_port, "0")
       protocol       = try(item.protocol, "-1")
@@ -29,7 +29,7 @@ locals {
     } if item.security_group != null
   }
   tgt_ingresses_cidr = {
-    for item in var.beanstalk_target_sg : format("%s-%s-%s",item.cidr_block,try(item.from_port, "0"),try(item.protocol, "0")) => {
+    for item in var.beanstalk_target_sg : format("%s-%s-%s", item.cidr_block, try(item.from_port, "0"), try(item.protocol, "0")) => {
       from_port   = try(item.from_port, "0")
       to_port     = try(item.to_port, "0")
       protocol    = try(item.protocol, "-1")
@@ -37,8 +37,8 @@ locals {
       cidr_block  = item.cidr_block
     } if item.cidr_block != null
   }
-  tgt_ingresses_sg_init = {
-    for item in var.beanstalk_target_sg : format("%s-%s-%s",item.security_group,try(item.from_port, "0"),try(item.protocol, "0")) => {
+  tgt_ingresses_sg = {
+    for item in var.beanstalk_target_sg : format("%s-%s-%s", item.security_group, try(item.from_port, "0"), try(item.protocol, "0")) => {
       from_port      = try(item.from_port, "0")
       to_port        = try(item.to_port, "0")
       protocol       = try(item.protocol, "-1")
@@ -47,16 +47,24 @@ locals {
     } if item.security_group != null
   }
 
-  tgt_ingresses_sg_mappings = {
-    for m in var.port_mappings : m.name => {
-      from_port      = m.to_port
-      to_port        = m.to_port
-      protocol       = m.backend_protocol
-      description    = "Allow traffic for ${m.name} - ${aws_security_group.lb_sg[0].id}"
-      security_group = aws_security_group.lb_sg[0].id
-    } if length(var.beanstalk_lb_sg) > 0 && length(var.beanstalk_target_sg) > 0
-  }
-  tgt_ingresses_sg = merge(local.tgt_ingresses_sg_init, local.tgt_ingresses_sg_mappings)
+  lb_sg_settings = [
+    for s in aws_security_group.lb_sg :
+    {
+      name      = "ManagedSecurityGroup"
+      namespace = "aws:elbv2:loadbalancer"
+      resource  = ""
+      value     = s.id
+    }
+  ]
+  tgt_sg_settings = [
+    for s in aws_security_group.instance_sg :
+    {
+      name      = "SecurityGroups"
+      namespace = "aws:autoscaling:launchconfiguration"
+      resource  = ""
+      value     = s.id
+    }
+  ]
 }
 
 resource "aws_security_group" "lb_sg" {

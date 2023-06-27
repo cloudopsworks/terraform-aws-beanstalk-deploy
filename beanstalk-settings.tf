@@ -723,6 +723,16 @@ locals {
     "${aitem.namespace}/${aitem.name}" => aitem
   })
 
-  eb_settings_map = merge(local.eb_initial_map, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map)
+  eb_settings_sg_lb = tomap({
+    for aitem in local.lb_sg_settings :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  })
+
+  eb_settings_sg_instance = tomap({
+    for aitem in local.tgt_sg_settings :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  })
+
+  eb_settings_map = merge(local.eb_initial_map, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map, local.eb_settings_sg_lb, local.eb_settings_sg_instance)
   eb_settings     = values(local.eb_settings_map)
 }
