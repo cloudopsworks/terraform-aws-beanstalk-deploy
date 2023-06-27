@@ -213,3 +213,30 @@ variable "extra_settings" {
   description = "(optional) List of extra settings for Elastic Beanstalk."
   nullable    = false
 }
+
+
+variable "beanstalk_lb_sg" {
+  type = list(object({
+    description    = optional(string)
+    from_port      = optional(string)
+    to_port        = optional(string)
+    cidr_block     = optional(string)
+    protocol       = optional(string)
+    self           = optional(bool)
+    security_group = optional(string)
+  }))
+  default = []
+}
+
+variable "beanstalk_target_sg" {
+  type = list(object({
+    description    = optional(string)
+    from_port      = optional(string)
+    to_port        = optional(string)
+    cidr_block     = optional(string)
+    protocol       = optional(string)
+    self           = optional(bool)
+    security_group = optional(string)
+  }))
+  default = []
+}
