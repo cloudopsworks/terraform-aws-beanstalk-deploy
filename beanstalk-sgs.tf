@@ -39,8 +39,8 @@ locals {
   }
   tgt_ingresses_sg = {
     for item in var.beanstalk_target_sg : format("%s-%s-%s", item.security_group, try(item.from_port, "0"), try(item.protocol, "0")) => {
-      from_port      = try(item.from_port, "0")
-      to_port        = try(item.to_port, "0")
+      from_port      = try(item.from_port, "-1")
+      to_port        = try(item.to_port, "-1")
       protocol       = try(item.protocol, "-1")
       description    = try(item.description, "Allow traffic")
       security_group = item.security_group
@@ -99,14 +99,14 @@ resource "aws_security_group" "instance_sg" {
 
 # SG rules for load balancer
 # Allow all outbound traffic from the load balancer
-#resource "aws_vpc_security_group_egress_rule" "egress_rule_lb" {
-#  count = length(var.beanstalk_lb_sg) > 0 ? 1 : 0
-#
-#  security_group_id = aws_security_group.lb_sg[0].id
-#  from_port         = 0
-#  to_port           = 0
-#  ip_protocol       = "-1"
-#  cidr_ipv4         = "0.0.0.0/0"
+resource "aws_vpc_security_group_egress_rule" "egress_rule_lb" {
+  count = length(var.beanstalk_lb_sg) > 0 ? 1 : 0
+
+  security_group_id = aws_security_group.lb_sg[0].id
+  from_port         = -1
+  to_port           = -1
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 #}
 
 resource "aws_vpc_security_group_ingress_rule" "ingress_rule_lb_cidr" {
@@ -133,14 +133,14 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_lb_sg" {
 
 # Instance SG rules
 # Allow all outbound traffic Target group
-#resource "aws_vpc_security_group_egress_rule" "egress_rule_tgt" {
-#  count = length(var.beanstalk_target_sg) > 0 ? 1 : 0
-#
-#  security_group_id = aws_security_group.instance_sg[0].id
-#  from_port         = 0
-#  to_port           = 0
-#  ip_protocol       = "-1"
-#  cidr_ipv4         = "0.0.0.0/0"
+resource "aws_vpc_security_group_egress_rule" "egress_rule_tgt" {
+  count = length(var.beanstalk_target_sg) > 0 ? 1 : 0
+
+  security_group_id = aws_security_group.instance_sg[0].id
+  from_port         = -1
+  to_port           = -1
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 #}
 
 resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_cidr" {
