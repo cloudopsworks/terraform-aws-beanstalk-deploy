@@ -47,15 +47,22 @@ locals {
     } if item.security_group != null
   }
 
-  lb_sg_settings = [
-    for s in aws_security_group.lb_sg :
-    {
-      name      = "ManagedSecurityGroup"
-      namespace = "aws:elbv2:loadbalancer"
-      resource  = ""
-      value     = s.id
-    }
-  ]
+  lb_sg_settings = flatten([
+    for s in aws_security_group.lb_sg : [
+      {
+        name      = "ManagedSecurityGroup"
+        namespace = "aws:elbv2:loadbalancer"
+        resource  = ""
+        value     = s.id
+      },
+      {
+        name      = "SecurityGroups"
+        namespace = "aws:elbv2:loadbalancer"
+        resource  = ""
+        value     = s.id
+      }
+    ]
+  ])
   tgt_sg_settings = [
     for s in aws_security_group.instance_sg :
     {
@@ -118,6 +125,13 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_lb_cidr" {
   to_port           = each.value.to_port
   ip_protocol       = each.value.protocol
   security_group_id = aws_security_group.lb_sg[0].id
+
+  tags = merge(var.extra_tags, {
+    Name        = local.sglb_name
+    Environment = local.envsgprefix
+    Namespace   = var.namespace
+    Release     = var.release_name
+  })
 }
 
 resource "aws_vpc_security_group_ingress_rule" "ingress_rule_lb_sg" {
@@ -129,6 +143,13 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_lb_sg" {
   to_port                      = each.value.to_port
   ip_protocol                  = each.value.protocol
   security_group_id            = aws_security_group.lb_sg[0].id
+
+  tags = merge(var.extra_tags, {
+    Name        = local.sglb_name
+    Environment = local.envsgprefix
+    Namespace   = var.namespace
+    Release     = var.release_name
+  })
 }
 
 # Instance SG rules
@@ -152,6 +173,13 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_cidr" {
   to_port           = each.value.to_port
   ip_protocol       = each.value.protocol
   security_group_id = aws_security_group.instance_sg[0].id
+
+  tags = merge(var.extra_tags, {
+    Name        = local.sgtarget_name
+    Environment = local.envsgprefix
+    Namespace   = var.namespace
+    Release     = var.release_name
+  })
 }
 
 resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_sg" {
@@ -163,4 +191,11 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_sg" {
   to_port                      = each.value.to_port
   ip_protocol                  = each.value.protocol
   security_group_id            = aws_security_group.instance_sg[0].id
+
+  tags = merge(var.extra_tags, {
+    Name        = local.sgtarget_name
+    Environment = local.envsgprefix
+    Namespace   = var.namespace
+    Release     = var.release_name
+  })
 }
