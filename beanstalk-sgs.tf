@@ -107,7 +107,7 @@ resource "aws_vpc_security_group_egress_rule" "egress_rule_lb" {
   to_port           = -1
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
-#}
+}
 
 resource "aws_vpc_security_group_ingress_rule" "ingress_rule_lb_cidr" {
   for_each = local.lb_ingresses_cidr
@@ -141,7 +141,7 @@ resource "aws_vpc_security_group_egress_rule" "egress_rule_tgt" {
   to_port           = -1
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
-#}
+}
 
 resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_cidr" {
   for_each = local.tgt_ingresses_cidr
