@@ -10,6 +10,14 @@ data "aws_alb" "beanstalk_alb" {
   arn = aws_elastic_beanstalk_environment.beanstalk_environment.load_balancers[0]
 }
 
+output "load_balancer_arn" {
+  value = data.aws_alb.beanstalk_alb.arn
+}
+
+output "load_balancer_id" {
+  value = data.aws_alb.beanstalk_alb.id
+}
+
 output "load_balancer_address" {
   value = data.aws_alb.beanstalk_alb.dns_name
 }
