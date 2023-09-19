@@ -14,6 +14,7 @@ locals {
     node         = "^64bit Amazon Linux 2 (.*) Node.js 12(.*)$"
     node14       = "^64bit Amazon Linux 2 (.*) Node.js 14(.*)$"
     node16       = "^64bit Amazon Linux 2 (.*) Node.js 16(.*)$"
+    node18       = "^64bit Amazon Linux 2 (.*) Node.js 18(.*)$"
     go           = "^64bit Amazon Linux 2 (.*) running Go (.*)$"
     docker       = "^64bit Amazon Linux 2 (.*) running Docker (.*)$"
     docker-m     = "^64bit Amazon Linux 2 (.*) Multi-container Docker (.*)$"
