@@ -38,6 +38,7 @@ locals {
       value     = ""
     }
   ]
+
   lb_settings_shared = [
     {
       name      = "LoadBalancerIsShared"
@@ -55,7 +56,7 @@ locals {
       name      = "SharedLoadBalancer"
       namespace = "aws:elbv2:loadbalancer"
       resource  = ""
-      value     = var.load_balancer_shared_arn
+      value     = var.load_balancer_shared ? data.aws_lb.shared_lb[0].arn : ""
     }
   ]
 
@@ -750,15 +751,15 @@ locals {
     "${aitem.namespace}/${aitem.name}" => aitem
   })
 
-  eb_lb_settings_map = tomap({
+  eb_lb_settings_map = ! var.load_balancer_shared ? tomap({
     for aitem in local.lb_settings_initial :
     "${aitem.namespace}/${aitem.name}" => aitem
-  })
+  }) : {}
 
-  eb_settings_shared_map = tomap({
+  eb_settings_shared_map = var.load_balancer_shared ? tomap({
     for aitem in local.lb_settings_shared :
     "${aitem.namespace}/${aitem.name}" => aitem
-  })
+  }) : {}
 
   eb_settings_map_pre = merge(local.eb_lb_settings_map, local.eb_settings_shared_map, local.eb_initial_map)
   eb_settings_map     = merge(local.eb_settings_map_pre, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map, local.eb_settings_sg_lb, local.eb_settings_sg_instance)

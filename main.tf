@@ -36,6 +36,12 @@ data "aws_elastic_beanstalk_solution_stack" "solution_stack" {
   name_regex = local.selected_solution
 }
 
+data "aws_lb" "shared_lb" {
+  count = var.load_balancer_shared ? 1 : 0
+
+  name = var.load_balancer_shared_name
+}
+
 data "aws_elastic_beanstalk_hosted_zone" "current" {}
 
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
