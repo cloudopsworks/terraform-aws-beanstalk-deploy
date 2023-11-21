@@ -75,6 +75,18 @@ variable "load_balancer_ssl_policy" {
   nullable    = false
 }
 
+variable "load_balancer_shared" {
+  type        = bool
+  default     = false
+  description = "(optional) Setting to make Application Load Balancer, defaults to public Load Balancer, Default: false"
+}
+
+variable "load_balancer_shared_arn" {
+  type        = string
+  default     = ""
+  description = "(optional) Shared Load Balancer ARN id to use, Default: (empty)"
+}
+
 variable "beanstalk_application" {
   type        = string
   description = "(required) Beanstalk application name to deploy to."

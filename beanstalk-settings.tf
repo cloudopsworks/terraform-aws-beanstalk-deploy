@@ -6,7 +6,7 @@
 locals {
   load_balancer_ssl_certificate_arn = "arn:aws:acm:${var.region}:${data.aws_caller_identity.current.account_id}:certificate/${var.load_balancer_ssl_certificate_id}"
 
-  eb_settings_initial = [
+  lb_settings_initial = [
     {
       name      = "AccessLogsS3Bucket"
       namespace = "aws:elbv2:loadbalancer"
@@ -26,6 +26,41 @@ locals {
       value     = var.load_balancer_log_prefix
     }
     # , {
+    #   name      = "IdleTimeout"
+    #   namespace = "aws:elbv2:loadbalancer"
+    #   resource  = ""
+    #   value     = ""
+    # }
+    , {
+      name      = "SecurityGroups"
+      namespace = "aws:elbv2:loadbalancer"
+      resource  = ""
+      value     = ""
+    }
+  ]
+  lb_settings_shared = [
+    {
+      name      = "LoadBalancerIsShared"
+      namespace = "aws:elasticbeanstalk:environment"
+      resource  = ""
+      value     = tostring(var.load_balancer_shared)
+    }
+    , {
+      name      = "SecurityGroups"
+      namespace = "aws:elbv2:loadbalancer"
+      resource  = ""
+      value     = ""
+    }
+    , {
+      name      = "SharedLoadBalancer"
+      namespace = "aws:elbv2:loadbalancer"
+      resource  = ""
+      value     = var.load_balancer_shared_arn
+    }
+  ]
+
+  eb_settings_initial = [
+    # , {
     #   name      = "AppSource"
     #   namespace = "aws:cloudformation:template:parameter"
     #   resource  = ""
@@ -38,7 +73,7 @@ locals {
     #   resource  = ""
     #   value     = "TCP:${var.beanstalk_instance_port}"
     # }
-    , {
+    {
       name      = "AssociatePublicIpAddress"
       namespace = "aws:ec2:vpc"
       resource  = ""
@@ -306,12 +341,6 @@ locals {
       resource  = ""
       value     = var.beanstalk_instance_profile
     }
-    # , {
-    #   name      = "IdleTimeout"
-    #   namespace = "aws:elbv2:loadbalancer"
-    #   resource  = ""
-    #   value     = ""
-    # }
     , {
       name      = "IgnoreHealthCheck"
       namespace = "aws:elasticbeanstalk:command"
@@ -360,12 +389,6 @@ locals {
       resource  = ""
       value     = "Migration"
     }
-    # , {
-    #   name      = "LoadBalancerIsShared"
-    #   namespace = "aws:elasticbeanstalk:environment"
-    #   resource  = ""
-    #   value     = "false"
-    # }
     , {
       name      = "LoadBalancerType"
       namespace = "aws:elasticbeanstalk:environment"
@@ -573,12 +596,6 @@ locals {
       value     = ""
     }
     , {
-      name      = "SecurityGroups"
-      namespace = "aws:elbv2:loadbalancer"
-      resource  = ""
-      value     = ""
-    }
-    , {
       name      = "ServiceRole"
       namespace = "aws:elasticbeanstalk:environment"
       resource  = ""
@@ -733,6 +750,17 @@ locals {
     "${aitem.namespace}/${aitem.name}" => aitem
   })
 
-  eb_settings_map = merge(local.eb_initial_map, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map, local.eb_settings_sg_lb, local.eb_settings_sg_instance)
-  eb_settings     = values(local.eb_settings_map)
+  eb_lb_settings_map = tomap({
+    for aitem in local.lb_settings_initial :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  })
+
+  eb_settings_shared_map = tomap({
+    for aitem in local.lb_settings_shared :
+    "${aitem.namespace}/${aitem.name}" => aitem
+  })
+
+  eb_settings_map_pre = merge(local.eb_lb_settings_map, local.eb_settings_shared_map, local.eb_initial_map)
+  eb_settings_map     = merge(local.eb_settings_map_pre, local.image_id, local.eb_port_mappings_map, local.eb_ssl_settings_map, local.eb_extra_settings_map, local.eb_settings_sg_lb, local.eb_settings_sg_instance)
+  eb_settings         = values(local.eb_settings_map)
 }
