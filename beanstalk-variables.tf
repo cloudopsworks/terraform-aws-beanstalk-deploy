@@ -148,6 +148,7 @@ variable "port_mappings" {
     backend_protocol   = optional(string, "HTTP")
     health_http_status = optional(string, "200-304")
     stickiness_cookie  = optional(string, "lb_cookie")
+    rules              = optional(list(string), [])
   }))
   default = [
     {
@@ -156,6 +157,19 @@ variable "port_mappings" {
       to_port   = 8080
     },
   ]
+  description = "(optional) Mappings of Load balancer ports."
+  nullable    = false
+}
+
+variable "rule_mappings" {
+  type = list(object({
+    name     = string
+    process  = string
+    host     = string
+    path     = optional(string, "")
+    priority = optional(number, 1)
+  }))
+  default     = []
   description = "(optional) Mappings of Load balancer ports."
   nullable    = false
 }

@@ -5,7 +5,7 @@
 #
 locals {
 
-  port_mappings_default = [
+  mappings_default_listeners = [
     for m in var.port_mappings :
     [
       {
@@ -14,6 +14,60 @@ locals {
         resource  = ""
         value     = m.name
       },
+      {
+        name      = "ListenerEnabled"
+        namespace = "aws:elbv2:listener:${m.name}"
+        resource  = ""
+        value     = "true"
+      },
+      {
+        name      = "Protocol"
+        namespace = "aws:elbv2:listener:${m.name}"
+        resource  = ""
+        value     = m.protocol
+      },
+      {
+        name      = "Rules"
+        namespace = "aws:elbv2:listener:${m.name}"
+        resource  = ""
+        value     = ""
+      },
+    ] if m.name == "default" && !var.load_balancer_shared
+  ]
+
+  mappings_port_listeners = [
+    for m in var.port_mappings :
+    [
+      {
+        name      = "DefaultProcess"
+        namespace = "aws:elbv2:listener:${m.from_port}"
+        resource  = ""
+        value     = m.name
+      },
+      {
+        name      = "ListenerEnabled"
+        namespace = "aws:elbv2:listener:${m.from_port}"
+        resource  = ""
+        value     = "true"
+      },
+      {
+        name      = "Protocol"
+        namespace = "aws:elbv2:listener:${m.from_port}"
+        resource  = ""
+        value     = m.protocol
+      },
+      {
+        name      = "Rules"
+        namespace = "aws:elbv2:listener:${m.from_port}"
+        resource  = ""
+        value     = ""
+      },
+    ] if m.name != "default" && !var.load_balancer_shared
+  ]
+
+  port_mappings_default = [
+    for m in var.port_mappings :
+    [
       {
         name      = "HealthCheckInterval"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
@@ -39,12 +93,6 @@ locals {
         value     = "3"
       },
       {
-        name      = "ListenerEnabled"
-        namespace = "aws:elbv2:listener:${m.name}"
-        resource  = ""
-        value     = "true"
-      },
-      {
         name      = "Port"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
@@ -55,18 +103,6 @@ locals {
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
         value     = m.backend_protocol
-      },
-      {
-        name      = "Protocol"
-        namespace = "aws:elbv2:listener:${m.name}"
-        resource  = ""
-        value     = m.protocol
-      },
-      {
-        name      = "Rules"
-        namespace = "aws:elbv2:listener:${m.name}"
-        resource  = ""
-        value     = ""
       },
       {
         name      = "MatcherHTTPCode"
@@ -110,12 +146,7 @@ locals {
 
   port_mappings_init = [
     for m in var.port_mappings :
-    [{
-      name      = "DefaultProcess"
-      namespace = "aws:elbv2:listener:${m.from_port}"
-      resource  = ""
-      value     = m.name
-      },
+    [
       {
         name      = "HealthCheckInterval"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
@@ -141,12 +172,6 @@ locals {
         value     = "3"
       },
       {
-        name      = "ListenerEnabled"
-        namespace = "aws:elbv2:listener:${m.from_port}"
-        resource  = ""
-        value     = "true"
-      },
-      {
         name      = "Port"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
@@ -157,18 +182,6 @@ locals {
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
         value     = m.backend_protocol
-      },
-      {
-        name      = "Protocol"
-        namespace = "aws:elbv2:listener:${m.from_port}"
-        resource  = ""
-        value     = m.protocol
-      },
-      {
-        name      = "Rules"
-        namespace = "aws:elbv2:listener:${m.from_port}"
-        resource  = ""
-        value     = ""
       },
       {
         name      = "MatcherHTTPCode"
@@ -224,10 +237,52 @@ locals {
         resource  = ""
         value     = local.load_balancer_ssl_certificate_arn
       }
-    ] if m.protocol == "HTTPS"
+    ] if m.protocol == "HTTPS" && !var.load_balancer_shared
   ]
 
-  ssl_mappings        = flatten(local.ssl_mappings_init)
-  port_mappings_local = flatten(concat(local.port_mappings_default, local.port_mappings_init))
+  shared_lb_rules = [
+    for m in var.port_mappings :
+    [
+      {
+        name      = "Rules"
+        namespace = "aws:elbv2:listener:${m.from_port}"
+        resource  = ""
+        value     = length(m.rules) > 0 ? join(m.rules, ",") : ""
+      },
+    ] if var.load_balancer_shared
+  ]
+  shared_lb_mappings = [
+    for r in var.rule_mappings :
+    [
+      {
+        name      = "HostHeaders"
+        namespace = "aws:elbv2:listenerrule:${r.name}"
+        resource  = ""
+        value     = r.host
+      },
+      {
+        name      = "PathPatterns"
+        namespace = "aws:elbv2:listenerrule:${r.name}"
+        resource  = ""
+        value     = r.path
+      },
+      {
+        name      = "Priority"
+        namespace = "aws:elbv2:listenerrule:${r.name}"
+        resource  = ""
+        value     = r.priority
+      },
+      {
+        name      = "Process"
+        namespace = "aws:elbv2:listenerrule:${r.name}"
+        resource  = ""
+        value     = r.process
+      },
+    ]
+  ]
 
+  ssl_mappings = flatten(local.ssl_mappings_init)
+  port_mappings_local = flatten(concat(local.port_mappings_default, local.port_mappings_init,
+    local.mappings_default_listeners, local.mappings_port_listeners, local.shared_lb_rules,
+  local.shared_lb_mappings))
 }

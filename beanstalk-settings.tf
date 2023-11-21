@@ -751,7 +751,7 @@ locals {
     "${aitem.namespace}/${aitem.name}" => aitem
   })
 
-  eb_lb_settings_map = ! var.load_balancer_shared ? tomap({
+  eb_lb_settings_map = !var.load_balancer_shared ? tomap({
     for aitem in local.lb_settings_initial :
     "${aitem.namespace}/${aitem.name}" => aitem
   }) : {}
