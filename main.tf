@@ -63,7 +63,7 @@ resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" 
 resource "null_resource" "shared_lb_rules" {
   triggers = {
     rules_count = "${length(local.eb_settings_shared_map)}"
-    is_shared = var.load_balancer_shared
+    is_shared   = var.load_balancer_shared
   }
 }
 
