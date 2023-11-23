@@ -60,6 +60,13 @@ resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" 
   }
 }
 
+resource "null_resource" "shared_lb_rules" {
+  triggers = {
+    rules_count = "${length(local.eb_settings_shared_map)}"
+    is_shared = var.load_balancer_shared
+  }
+}
+
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
   name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
   application         = data.aws_elastic_beanstalk_application.application.name
@@ -84,4 +91,11 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
     Namespace   = var.namespace
     Release     = var.release_name
   })
+
+  lifecycle {
+    create_before_destroy = true
+    replace_triggered_by = [
+      null_resource.shared_lb_rules
+    ]
+  }
 }
