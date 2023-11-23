@@ -33,7 +33,6 @@ locals {
     for m in var.rule_mappings :
     m.host
   ]
-  mappings_sha = sha256(join("-", mapping_list))
 
   rule_m_list = [
     for m in var.port_mappings :
