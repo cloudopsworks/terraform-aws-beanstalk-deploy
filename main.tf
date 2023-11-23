@@ -31,12 +31,12 @@ locals {
 
   rule_m_list = flatten([
     for m in var.rule_mappings :
-    m.host
+    [m.host]
   ])
 
   rule_m2_list = flatten([
     for m in var.port_mappings :
-    join("-", m.rules)
+    [join("-", m.rules)]
     if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
   ])
 
