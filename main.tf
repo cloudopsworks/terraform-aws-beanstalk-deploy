@@ -29,18 +29,18 @@ locals {
   lookup_solution   = lookup(local.solutions, var.solution_stack, "")
   selected_solution = local.lookup_solution == "" ? (var.solution_stack == "" ? local.default_solution : var.solution_stack) : local.lookup_solution
 
-  mapping_list = flatten([
+  rule_m_list = flatten([
     for m in var.rule_mappings :
     m.host
   ])
 
-  rule_m_list = flatten([
+  rule_m2_list = flatten([
     for m in var.port_mappings :
     join("-", m.rules)
     if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
   ])
 
-  rule_name_sha = sha256(join("-", local.rule_m_list) + join("-", local.mapping_list))
+  rule_name_sha = sha256(join("-", local.rule_m_list) + join("-", local.rule_m2_list))
 }
 
 data "aws_elastic_beanstalk_solution_stack" "solution_stack" {
