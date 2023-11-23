@@ -28,6 +28,20 @@ locals {
 
   lookup_solution   = lookup(local.solutions, var.solution_stack, "")
   selected_solution = local.lookup_solution == "" ? (var.solution_stack == "" ? local.default_solution : var.solution_stack) : local.lookup_solution
+
+  mapping_list = [
+    for m in var.rule_mappings :
+    m.host
+  ]
+  mappings_sha = sha256(join("-", mapping_list))
+
+  rule_m_list = [
+    for m in var.port_mappings :
+    join("-", m.rules)
+    if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
+  ]
+
+  rule_name_sha = sha256(join("-", local.rule_m_list) + join("-", local.mapping_list))
 }
 
 data "aws_elastic_beanstalk_solution_stack" "solution_stack" {
@@ -62,8 +76,9 @@ resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" 
 
 resource "null_resource" "shared_lb_rules" {
   triggers = {
-    rules_count = "rules-${length(flatten(local.shared_lb_mappings))}-${length(flatten(local.shared_lb_rules))}"
-    is_shared   = var.load_balancer_shared
+    rules_count   = "rules-${length(flatten(local.shared_lb_mappings))}-${length(flatten(local.shared_lb_rules))}"
+    is_shared     = var.load_balancer_shared
+    rule_name_sha = local.rule_name_sha
   }
 }
 
