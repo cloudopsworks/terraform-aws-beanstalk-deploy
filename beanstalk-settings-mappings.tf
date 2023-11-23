@@ -270,7 +270,7 @@ locals {
         name      = "Priority"
         namespace = "aws:elbv2:listenerrule:${r.name}"
         resource  = ""
-        value     = r.priority
+        value     = var.load_balancer_shared_weight
       },
       {
         name      = "Process"

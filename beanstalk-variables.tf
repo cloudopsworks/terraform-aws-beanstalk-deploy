@@ -93,6 +93,12 @@ variable "load_balancer_shared_name" {
   description = "(optional) Shared Load Balancer ARN id to use, Default: (empty)"
 }
 
+variable "load_balancer_shared_weight" {
+  type = number
+  default = 0
+  description = "(optional) Load Balancer weight to use, Default: 0"
+}
+
 
 variable "beanstalk_application" {
   type        = string
