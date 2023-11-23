@@ -31,7 +31,7 @@ locals {
 
   mapping_list = [
     for m in var.rule_mappings :
-    m.host
+    join("-", m.host)
   ]
 
   rule_m_list = [
