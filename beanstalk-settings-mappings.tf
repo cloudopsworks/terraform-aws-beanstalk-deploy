@@ -240,17 +240,17 @@ locals {
     ] if m.protocol == "HTTPS" && !var.load_balancer_shared
   ]
 
-    shared_lb_rules = [
-      for m in var.port_mappings :
-      [
-        {
-          name      = "Rules"
-          namespace = "aws:elbv2:listener:${m.from_port}"
-          resource  = ""
-          value     = join(",", m.rules)
-        },
-      ] if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
-    ]
+  shared_lb_rules = [
+    for m in var.port_mappings :
+    [
+      {
+        name      = "Rules"
+        namespace = "aws:elbv2:listener:${m.from_port}"
+        resource  = ""
+        value     = join(",", m.rules)
+      },
+    ] if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
+  ]
 
   shared_lb_mappings = [
     for r in var.rule_mappings :
