@@ -58,16 +58,26 @@ resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" 
       value     = setting.value.value
     }
   }
-
 }
 
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
-  name          = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
-  application   = data.aws_elastic_beanstalk_application.application.name
-  cname_prefix  = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
-  tier          = "WebServer"
-  version_label = var.application_version_label
-  template_name = aws_elastic_beanstalk_configuration_template.beanstalk_environment.name
+  name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+  application         = data.aws_elastic_beanstalk_application.application.name
+  cname_prefix        = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
+  tier                = "WebServer"
+  version_label       = var.application_version_label
+  solution_stack_name = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
+  #template_name = aws_elastic_beanstalk_configuration_template.beanstalk_environment.name
+
+  dynamic "setting" {
+    for_each = local.eb_settings_map
+    content {
+      name      = setting.value.name
+      namespace = setting.value.namespace
+      resource  = setting.value.resource
+      value     = setting.value.value
+    }
+  }
 
   tags = merge(var.extra_tags, {
     Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
