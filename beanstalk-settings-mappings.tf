@@ -26,12 +26,12 @@ locals {
         resource  = ""
         value     = m.protocol
       },
-      {
-        name      = "Rules"
-        namespace = "aws:elbv2:listener:${m.name}"
-        resource  = ""
-        value     = ""
-      },
+#      {
+#        name      = "Rules"
+#        namespace = "aws:elbv2:listener:${m.name}"
+#        resource  = ""
+#        value     = ""
+#      },
     ] if m.name == "default" && !var.load_balancer_shared
   ]
 
@@ -56,12 +56,12 @@ locals {
         resource  = ""
         value     = m.protocol
       },
-      {
-        name      = "Rules"
-        namespace = "aws:elbv2:listener:${m.from_port}"
-        resource  = ""
-        value     = ""
-      },
+#      {
+#        name      = "Rules"
+#        namespace = "aws:elbv2:listener:${m.from_port}"
+#        resource  = ""
+#        value     = ""
+#      },
     ] if m.name != "default" && !var.load_balancer_shared
   ]
 
@@ -240,17 +240,17 @@ locals {
     ] if m.protocol == "HTTPS" && !var.load_balancer_shared
   ]
 
-  shared_lb_rules = [
-    for m in var.port_mappings :
-    [
-      {
-        name      = "Rules"
-        namespace = "aws:elbv2:listener:${m.from_port}"
-        resource  = ""
-        value     = length(m.rules) > 0 ? join(",", m.rules) : ""
-      },
-    ] if var.load_balancer_shared && m.name != "default"
-  ]
+#  shared_lb_rules = [
+#    for m in var.port_mappings :
+#    [
+#      {
+#        name      = "Rules"
+#        namespace = "aws:elbv2:listener:${m.from_port}"
+#        resource  = ""
+#        value     = length(m.rules) > 0 ? join(",", m.rules) : ""
+#      },
+#    ] if var.load_balancer_shared && m.name != "default"
+#  ]
   shared_lb_mappings = [
     for r in var.rule_mappings :
     [
@@ -283,6 +283,6 @@ locals {
 
   ssl_mappings = flatten(local.ssl_mappings_init)
   port_mappings_local = flatten(concat(local.port_mappings_default, local.port_mappings_init,
-    local.mappings_default_listeners, local.mappings_port_listeners, local.shared_lb_rules,
+    local.mappings_default_listeners, local.mappings_port_listeners, #local.shared_lb_rules,
   local.shared_lb_mappings))
 }
