@@ -44,13 +44,10 @@ data "aws_lb" "shared_lb" {
 
 data "aws_elastic_beanstalk_hosted_zone" "current" {}
 
-resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
-  name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" {
+  name = var.beanstalk_environment != "" ? "${var.beanstalk_environment}-config" : "${var.release_name}-${var.namespace}-config"
   application         = data.aws_elastic_beanstalk_application.application.name
-  cname_prefix        = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
   solution_stack_name = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
-  tier                = "WebServer"
-  version_label       = var.application_version_label
 
   dynamic "setting" {
     for_each = local.eb_settings_map
@@ -61,6 +58,17 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
       value     = setting.value.value
     }
   }
+
+}
+
+resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
+  name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+  application         = data.aws_elastic_beanstalk_application.application.name
+  cname_prefix        = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
+  solution_stack_name = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
+  tier                = "WebServer"
+  version_label       = var.application_version_label
+  template_name       = aws_elastic_beanstalk_configuration_template.beanstalk_environment.name
 
   tags = merge(var.extra_tags, {
     Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
