@@ -32,7 +32,7 @@ locals {
       #        resource  = ""
       #        value     = ""
       #      },
-    ] if m.name == "default" && !var.load_balancer_shared
+    ] if m.name == "default"
   ]
 
   mappings_port_listeners = [
@@ -62,7 +62,7 @@ locals {
       #        resource  = ""
       #        value     = ""
       #      },
-    ] if m.name != "default" && !var.load_balancer_shared
+    ] if m.name != "default"
   ]
 
   port_mappings_default = [
