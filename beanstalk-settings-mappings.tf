@@ -26,12 +26,12 @@ locals {
         resource  = ""
         value     = m.protocol
       },
-#      {
-#        name      = "Rules"
-#        namespace = "aws:elbv2:listener:${m.name}"
-#        resource  = ""
-#        value     = ""
-#      },
+      #      {
+      #        name      = "Rules"
+      #        namespace = "aws:elbv2:listener:${m.name}"
+      #        resource  = ""
+      #        value     = ""
+      #      },
     ] if m.name == "default" && !var.load_balancer_shared
   ]
 
@@ -56,12 +56,12 @@ locals {
         resource  = ""
         value     = m.protocol
       },
-#      {
-#        name      = "Rules"
-#        namespace = "aws:elbv2:listener:${m.from_port}"
-#        resource  = ""
-#        value     = ""
-#      },
+      #      {
+      #        name      = "Rules"
+      #        namespace = "aws:elbv2:listener:${m.from_port}"
+      #        resource  = ""
+      #        value     = ""
+      #      },
     ] if m.name != "default" && !var.load_balancer_shared
   ]
 
@@ -240,17 +240,17 @@ locals {
     ] if m.protocol == "HTTPS" && !var.load_balancer_shared
   ]
 
-#  shared_lb_rules = [
-#    for m in var.port_mappings :
-#    [
-#      {
-#        name      = "Rules"
-#        namespace = "aws:elbv2:listener:${m.from_port}"
-#        resource  = ""
-#        value     = length(m.rules) > 0 ? join(",", m.rules) : ""
-#      },
-#    ] if var.load_balancer_shared && m.name != "default"
-#  ]
+  #  shared_lb_rules = [
+  #    for m in var.port_mappings :
+  #    [
+  #      {
+  #        name      = "Rules"
+  #        namespace = "aws:elbv2:listener:${m.from_port}"
+  #        resource  = ""
+  #        value     = length(m.rules) > 0 ? join(",", m.rules) : ""
+  #      },
+  #    ] if var.load_balancer_shared && m.name != "default"
+  #  ]
   shared_lb_mappings = [
     for r in var.rule_mappings :
     [
@@ -258,7 +258,7 @@ locals {
         name      = "HostHeaders"
         namespace = "aws:elbv2:listenerrule:${r.name}"
         resource  = ""
-        value     = join(",", [r.host , "${var.load_balancer_alias}.${var.region}.elasticbeanstalk.com"])
+        value     = join(",", [r.host, "${var.load_balancer_alias}.${var.region}.elasticbeanstalk.com"])
       },
       {
         name      = "PathPatterns"

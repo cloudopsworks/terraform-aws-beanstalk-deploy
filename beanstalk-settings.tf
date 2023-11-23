@@ -738,7 +738,12 @@ locals {
 
   eb_extra_settings_map = tomap({
     for aitem in var.extra_settings :
-    "${aitem.namespace}/${aitem.name}" => aitem
+    "${aitem.namespace}/${aitem.name}" => {
+      name      = aitem.name
+      namespace = aitem.namespace
+      resource  = ""
+      value     = aitem.value
+    }
   })
 
   eb_settings_sg_lb = tomap({

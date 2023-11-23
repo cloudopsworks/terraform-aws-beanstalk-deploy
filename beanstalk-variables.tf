@@ -94,8 +94,8 @@ variable "load_balancer_shared_name" {
 }
 
 variable "load_balancer_shared_weight" {
-  type = number
-  default = 0
+  type        = number
+  default     = 0
   description = "(optional) Load Balancer weight to use, Default: 0"
 }
 
