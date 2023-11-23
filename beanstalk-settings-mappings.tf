@@ -258,7 +258,7 @@ locals {
         name      = "HostHeaders"
         namespace = "aws:elbv2:listenerrule:${r.name}"
         resource  = ""
-        value     = r.host
+        value     = load_balancer_alias(",", [r.host , "${var.load_balancer_alias}.${var.region}.elasticbeanstalk.com"])
       },
       {
         name      = "PathPatterns"
