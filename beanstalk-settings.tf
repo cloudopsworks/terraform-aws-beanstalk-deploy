@@ -463,6 +463,12 @@ locals {
       value     = tostring(var.beanstalk_min_instances)
     }
     , {
+      name      = "LaunchTemplateTagPropagationEnabled"
+      namespace = "aws:autoscaling:launchconfiguration"
+      resource  = ""
+      value     = "true"
+    }
+    , {
       name      = "MonitoringInterval"
       namespace = "aws:autoscaling:launchconfiguration"
       resource  = ""
