@@ -29,7 +29,7 @@ locals {
   lookup_solution   = lookup(local.solutions, var.solution_stack, "")
   selected_solution = local.lookup_solution == "" ? (var.solution_stack == "" ? local.default_solution : var.solution_stack) : local.lookup_solution
 
-  rule_m_str = "${jsonencode(var.rule_mappings)}-${jsonencode(var.port_mappings)}"
+  rule_m_str    = "${jsonencode(var.rule_mappings)}-${jsonencode(var.port_mappings)}"
   rule_name_sha = sha256(local.rule_m_str)
 }
 
@@ -73,6 +73,7 @@ resource "null_resource" "shared_lb_rules" {
 
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
   name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+  description         = "Managed by IAC - Do not modify out of Terraform"
   application         = data.aws_elastic_beanstalk_application.application.name
   cname_prefix        = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
   tier                = "WebServer"

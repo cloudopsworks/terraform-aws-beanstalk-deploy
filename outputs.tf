@@ -33,3 +33,19 @@ output "environment_id" {
 output "environment_name" {
   value = aws_elastic_beanstalk_environment.beanstalk_environment.name
 }
+
+output "environment_scaling_groups_ids" {
+  value = aws_elastic_beanstalk_environment.beanstalk_environment.autoscaling_groups
+}
+
+output "environment_instances_ids" {
+  value = aws_elastic_beanstalk_environment.beanstalk_environment.instances
+}
+
+output "environment_launch_configurations_ids" {
+  value = aws_elastic_beanstalk_environment.beanstalk_environment.launch_configurations
+}
+
+output "environment_endpoint_url" {
+  value = aws_elastic_beanstalk_environment.beanstalk_environment.endpoint_url
+}
