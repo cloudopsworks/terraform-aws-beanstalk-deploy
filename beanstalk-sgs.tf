@@ -2,6 +2,7 @@ locals {
   envsgprefix   = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
   sglb_name     = format("%s-%s", local.envsgprefix, "lb-sg")
   sgtarget_name = format("%s-%s", local.envsgprefix, "tgt-sg")
+  sgssh_name    = format("%s-%s", local.envsgprefix, "ssh-sg")
 
   ingress_default = {
     from_port   = 0
@@ -198,4 +199,27 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_sg" {
     Namespace   = var.namespace
     Release     = var.release_name
   })
+}
+
+# SSH default SG
+resource "aws_security_group" "ssh_access_sg" {
+  name        = local.sgssh_name
+  description = "SSH Lock Security group for ${local.envsgprefix}"
+  vpc_id      = var.vpc_id
+
+  tags = merge(var.extra_tags, {
+    Name        = local.sgssh_name
+    Environment = local.envsgprefix
+    Namespace   = var.namespace
+    Release     = var.release_name
+  })
+}
+
+# Allow all outbound traffic Target group
+resource "aws_vpc_security_group_egress_rule" "egress_ssh_access" {
+  security_group_id = aws_security_group.ssh_access_sg.id
+  from_port         = -1
+  to_port           = -1
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
