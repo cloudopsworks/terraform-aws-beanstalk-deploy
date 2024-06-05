@@ -582,7 +582,7 @@ locals {
       name      = "SSHSourceRestriction"
       namespace = "aws:autoscaling:launchconfiguration"
       resource  = ""
-      value     = "tcp,22,22,0.0.0.0/0"
+      value     = "tcp,22,22,${aws_security_group.ssh_access_sg.id}"
     }
     # , {
     #   name      = "SSLCertificateArns"
