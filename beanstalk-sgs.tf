@@ -216,11 +216,11 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_sg" {
 #   })
 # }
 
-# Allow all outbound traffic Target group
-resource "aws_vpc_security_group_egress_rule" "egress_ssh_access" {
-  security_group_id = aws_security_group.ssh_access_sg.id
-  from_port         = -1
-  to_port           = -1
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
-}
+# # Allow all outbound traffic Target group
+# resource "aws_vpc_security_group_egress_rule" "egress_ssh_access" {
+#   security_group_id = aws_security_group.ssh_access_sg.id
+#   from_port         = -1
+#   to_port           = -1
+#   ip_protocol       = "-1"
+#   cidr_ipv4         = "0.0.0.0/0"
+# }
