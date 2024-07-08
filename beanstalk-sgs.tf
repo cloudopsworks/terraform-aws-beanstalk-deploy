@@ -201,19 +201,20 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_rule_tgt_sg" {
   })
 }
 
-# SSH default SG
-resource "aws_security_group" "ssh_access_sg" {
-  name        = local.sgssh_name
-  description = "SSH Lock Security group for ${local.envsgprefix}"
-  vpc_id      = var.vpc_id
-
-  tags = merge(var.extra_tags, {
-    Name        = local.sgssh_name
-    Environment = local.envsgprefix
-    Namespace   = var.namespace
-    Release     = var.release_name
-  })
-}
+# BUG: REMOVED as gives big problems on environments settings
+# # SSH default SG
+# resource "aws_security_group" "ssh_access_sg" {
+#   name        = local.sgssh_name
+#   description = "SSH Lock Security group for ${local.envsgprefix}"
+#   vpc_id      = var.vpc_id
+#
+#   tags = merge(var.extra_tags, {
+#     Name        = local.sgssh_name
+#     Environment = local.envsgprefix
+#     Namespace   = var.namespace
+#     Release     = var.release_name
+#   })
+# }
 
 # Allow all outbound traffic Target group
 resource "aws_vpc_security_group_egress_rule" "egress_ssh_access" {

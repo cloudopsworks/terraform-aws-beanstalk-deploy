@@ -578,12 +578,13 @@ locals {
       resource  = ""
       value     = var.beanstalk_instance_volume_type
     }
-    , {
-      name      = "SSHSourceRestriction"
-      namespace = "aws:autoscaling:launchconfiguration"
-      resource  = ""
-      value     = "tcp,22,22,${aws_security_group.ssh_access_sg.id}"
-    }
+    # BUG: REMOVED as gives big problems on environments settings
+    #     , {
+    #       name      = "SSHSourceRestriction"
+    #       namespace = "aws:autoscaling:launchconfiguration"
+    #       resource  = ""
+    #       value     = "tcp,22,22,${aws_security_group.ssh_access_sg.id}"
+    #     }
     # , {
     #   name      = "SSLCertificateArns"
     #   namespace = "aws:elbv2:listener:default"
