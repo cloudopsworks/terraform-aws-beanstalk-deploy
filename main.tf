@@ -47,21 +47,21 @@ data "aws_lb" "shared_lb" {
 
 data "aws_elastic_beanstalk_hosted_zone" "current" {}
 
-resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" {
-  name                = var.beanstalk_environment != "" ? "${var.beanstalk_environment}-config" : "${var.release_name}-${var.namespace}-config"
-  application         = data.aws_elastic_beanstalk_application.application.name
-  solution_stack_name = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
-
-  dynamic "setting" {
-    for_each = local.eb_settings_map
-    content {
-      name      = setting.value.name
-      namespace = setting.value.namespace
-      resource  = setting.value.resource
-      value     = setting.value.value
-    }
-  }
-}
+# resource "aws_elastic_beanstalk_configuration_template" "beanstalk_environment" {
+#   name                = var.beanstalk_environment != "" ? "${var.beanstalk_environment}-config" : "${var.release_name}-${var.namespace}-config"
+#   application         = data.aws_elastic_beanstalk_application.application.name
+#   solution_stack_name = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
+#
+#   dynamic "setting" {
+#     for_each = local.eb_settings_map
+#     content {
+#       name      = setting.value.name
+#       namespace = setting.value.namespace
+#       resource  = setting.value.resource
+#       value     = setting.value.value
+#     }
+#   }
+# }
 
 resource "null_resource" "shared_lb_rules" {
   triggers = {
