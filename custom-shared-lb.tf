@@ -22,12 +22,22 @@ data "aws_lb_listener" "lb_listener" {
   port              = local.sh_port_mappings[each.value.process].from_port
 }
 
+resource "random_string" "random" {
+  length = 4
+  special = false
+  upper = false
+
+  keepers = {
+    aws_elastic_beanstalk_environment.beanstalk_environment.id
+  }
+}
+
 resource "aws_lb_target_group" "lb_tg" {
   depends_on = [
     aws_elastic_beanstalk_environment.beanstalk_environment
   ]
   for_each = local.sh_rule_mappings
-  name     = "${aws_elastic_beanstalk_environment.beanstalk_environment.id}-${each.key}-tg"
+  name     = "${aws_elastic_beanstalk_environment.beanstalk_environment.id}-${each.key}-${random_string.random.result}-tg"
   port     = local.sh_port_mappings[each.value.process].to_port
   protocol = local.sh_port_mappings[each.value.process].backend_protocol
   vpc_id   = data.aws_lb.shared_lb[0].vpc_id
@@ -47,6 +57,9 @@ resource "aws_lb_target_group" "lb_tg" {
     Namespace   = var.namespace
     Release     = var.release_name
   })
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_autoscaling_attachment" "lb_tg_att" {
