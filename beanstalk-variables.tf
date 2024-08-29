@@ -146,16 +146,7 @@ variable "beanstalk_service_role" {
 }
 
 variable "port_mappings" {
-  type = list(object({
-    name               = string
-    from_port          = number
-    to_port            = number
-    protocol           = optional(string, "HTTP")
-    backend_protocol   = optional(string, "HTTP")
-    health_http_status = optional(string, "200-304")
-    stickiness_cookie  = optional(string, "lb_cookie")
-    rules              = optional(list(string), [])
-  }))
+  type = any
   default = [
     {
       name      = "default"
@@ -278,4 +269,10 @@ variable "beanstalk_target_sg" {
     security_group = optional(string)
   }))
   default = []
+}
+
+variable "custom_shared_rules" {
+  type        = bool
+  default     = false
+  description = "(optional) Setting to make Application Load Balancer, defaults to public Load Balancer, Default: false"
 }

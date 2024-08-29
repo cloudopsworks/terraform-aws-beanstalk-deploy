@@ -24,7 +24,7 @@ locals {
         name      = "Protocol"
         namespace = "aws:elbv2:listener:${m.name}"
         resource  = ""
-        value     = m.protocol
+        value     = try(m.protocol, "HTTP")
       },
       #      {
       #        name      = "Rules"
@@ -54,7 +54,7 @@ locals {
         name      = "Protocol"
         namespace = "aws:elbv2:listener:${m.from_port}"
         resource  = ""
-        value     = m.protocol
+        value     = try(m.protocol, "HTTP")
       },
       #      {
       #        name      = "Rules"
@@ -102,13 +102,13 @@ locals {
         name      = "Protocol"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.backend_protocol
+        value     = try(m.backend_protocol, "HTTP")
       },
       {
         name      = "MatcherHTTPCode"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.health_http_status
+        value     = try(m.health_check.matcher, "200-302")
       },
       {
         name      = "StickinessEnabled"
@@ -126,7 +126,7 @@ locals {
         name      = "StickinessType"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.stickiness_cookie
+        value     = try(m.stickiness_cookie, "lb_cookie")
       },
       {
         name      = "UnhealthyThresholdCount"
@@ -181,13 +181,13 @@ locals {
         name      = "Protocol"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.backend_protocol
+        value     = try(m.backend_protocol, "HTTP")
       },
       {
         name      = "MatcherHTTPCode"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.health_http_status
+        value     = try(m.health_check.matcher, "200-302")
       },
       {
         name      = "StickinessEnabled"
@@ -205,7 +205,7 @@ locals {
         name      = "StickinessType"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.stickiness_cookie
+        value     = try(m.stickiness_cookie, "lb_cookie")
       },
       {
         name      = "UnhealthyThresholdCount"
@@ -237,7 +237,7 @@ locals {
         resource  = ""
         value     = local.load_balancer_ssl_certificate_arn
       }
-    ] if m.protocol == "HTTPS" && !var.load_balancer_shared
+    ] if try(m.protocol, "HTTP") == "HTTPS" && !var.load_balancer_shared
   ]
 
   shared_lb_rules = [
@@ -247,9 +247,9 @@ locals {
         name      = "Rules"
         namespace = "aws:elbv2:listener:${m.from_port}"
         resource  = ""
-        value     = join(",", m.rules)
+        value     = join(",", try(m.rules, []))
       },
-    ] if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
+    ] if var.load_balancer_shared && m.name != "default" && length(try(m.rules, [])) > 0 && var.custom_shared_rules == false
   ]
 
   shared_lb_mappings = [
@@ -279,7 +279,7 @@ locals {
         resource  = ""
         value     = r.process
       },
-    ]
+    ] if var.custom_shared_rules == false
   ]
 
   ssl_mappings = flatten(local.ssl_mappings_init)
