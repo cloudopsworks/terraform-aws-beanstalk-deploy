@@ -24,11 +24,11 @@ data "aws_lb_listener" "lb_listener" {
 
 resource "random_string" "random" {
   for_each = local.sh_rule_mappings
-  length  = 4
-  special = false
-  upper   = false
+  length   = 4
+  special  = false
+  upper    = false
   keepers = {
-    envid = aws_elastic_beanstalk_environment.beanstalk_environment.id
+    envid            = aws_elastic_beanstalk_environment.beanstalk_environment.id
     backend_protocol = local.sh_port_mappings[each.value.process].backend_protocol
   }
 }
