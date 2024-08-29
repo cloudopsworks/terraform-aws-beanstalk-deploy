@@ -247,9 +247,9 @@ locals {
         name      = "Rules"
         namespace = "aws:elbv2:listener:${m.from_port}"
         resource  = ""
-        value     = join(",", m.rules)
+        value     = join(",", try(m.rules, []))
       },
-    ] if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0 && var.custom_shared_rules == false
+    ] if var.load_balancer_shared && m.name != "default" && length(try(m.rules, [])) > 0 && var.custom_shared_rules == false
   ]
 
   shared_lb_mappings = [
