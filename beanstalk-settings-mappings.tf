@@ -108,7 +108,7 @@ locals {
         name      = "MatcherHTTPCode"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = m.health_http_status
+        value     = try(m.health_check.matcher, "200-302")
       },
       {
         name      = "StickinessEnabled"
