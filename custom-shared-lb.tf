@@ -23,12 +23,11 @@ data "aws_lb_listener" "lb_listener" {
 }
 
 resource "random_string" "random" {
-  length = 4
+  length  = 4
   special = false
-  upper = false
-
+  upper   = false
   keepers = {
-    aws_elastic_beanstalk_environment.beanstalk_environment.id
+    envid = aws_elastic_beanstalk_environment.beanstalk_environment.id
   }
 }
 
