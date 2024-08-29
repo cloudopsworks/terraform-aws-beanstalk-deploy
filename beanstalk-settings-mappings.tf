@@ -249,7 +249,7 @@ locals {
         resource  = ""
         value     = join(",", m.rules)
       },
-    ] if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0
+    ] if var.load_balancer_shared && m.name != "default" && length(m.rules) > 0 && var.custom_shared_rules == false
   ]
 
   shared_lb_mappings = [
@@ -279,7 +279,7 @@ locals {
         resource  = ""
         value     = r.process
       },
-    ]
+    ] if var.custom_shared_rules == false
   ]
 
   ssl_mappings = flatten(local.ssl_mappings_init)

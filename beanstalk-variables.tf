@@ -279,3 +279,9 @@ variable "beanstalk_target_sg" {
   }))
   default = []
 }
+
+variable "custom_shared_rules" {
+  type        = bool
+  default     = false
+  description = "(optional) Setting to make Application Load Balancer, defaults to public Load Balancer, Default: false"
+}
