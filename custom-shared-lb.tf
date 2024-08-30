@@ -58,9 +58,9 @@ resource "aws_lb_target_group" "lb_tg" {
     Namespace   = var.namespace
     Release     = var.release_name
   })
-  lifecycle {
-    create_before_destroy = true
-  }
+#   lifecycle {
+#     create_before_destroy = true
+#   }
 }
 
 resource "aws_autoscaling_attachment" "lb_tg_att" {
