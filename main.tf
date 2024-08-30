@@ -98,7 +98,7 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
   })
 
   lifecycle {
-    #create_before_destroy = true
+    create_before_destroy = false
     replace_triggered_by = [
       null_resource.shared_lb_rules.id
     ]
