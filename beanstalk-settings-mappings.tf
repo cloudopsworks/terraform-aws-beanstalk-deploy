@@ -72,25 +72,25 @@ locals {
         name      = "HealthCheckInterval"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "15"
+        value     = try(m.health_check.interval, "15")
       },
       {
         name      = "HealthCheckPath"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "/"
+        value     = try(m.health_check.path, "/")
       },
       {
         name      = "HealthCheckTimeout"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "5"
+        value     = try(m.health_check.timeout, "5")
       },
       {
         name      = "HealthyThresholdCount"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "3"
+        value     = try(m.health_check.healthy_threshold, "3")
       },
       {
         name      = "Port"
@@ -114,31 +114,31 @@ locals {
         name      = "StickinessEnabled"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "false"
+        value     = try(m.stickiness.enabled, "false")
       },
       {
         name      = "StickinessLBCookieDuration"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "86400"
+        value     = try(m.stickiness.duration, "86400")
       },
       {
         name      = "StickinessType"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = try(m.stickiness_cookie, "lb_cookie")
+        value     = try(m.stickiness.cookie, "lb_cookie")
       },
       {
         name      = "UnhealthyThresholdCount"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "5"
+        value     = try(m.health_check.unhealthy_threshold, "5")
       },
       {
         name      = "DeregistrationDelay"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "20"
+        value     = try(m.deregistration_delay, "20")
       }
 
     ] if m.name == "default"
@@ -151,25 +151,25 @@ locals {
         name      = "HealthCheckInterval"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "15"
+        value     = try(m.health_check.interval, "15")
       },
       {
         name      = "HealthCheckPath"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "/"
+        value     = try(m.health_check.path, "/")
       },
       {
         name      = "HealthCheckTimeout"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "5"
+        value     = try(m.health_check.timeout, "5")
       },
       {
         name      = "HealthyThresholdCount"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "3"
+        value     = try(m.health_check.healthy_threshold, "3")
       },
       {
         name      = "Port"
@@ -193,31 +193,31 @@ locals {
         name      = "StickinessEnabled"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "false"
+        value     = try(m.stickiness.enabled, "false")
       },
       {
         name      = "StickinessLBCookieDuration"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "86400"
+        value     = try(m.stickiness.duration, "86400")
       },
       {
         name      = "StickinessType"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = try(m.stickiness_cookie, "lb_cookie")
+        value     = try(m.stickiness.cookie, "lb_cookie")
       },
       {
         name      = "UnhealthyThresholdCount"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "5"
+        value     = try(m.health_check.unhealthy_threshold, "5")
       },
       {
         name      = "DeregistrationDelay"
         namespace = "aws:elasticbeanstalk:environment:process:${m.name}"
         resource  = ""
-        value     = "20"
+        value     = try(m.deregistration_delay, "20")
       }
     ] if m.name != "default"
   ]
