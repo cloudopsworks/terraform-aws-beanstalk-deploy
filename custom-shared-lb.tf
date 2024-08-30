@@ -103,6 +103,37 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
     host_header {
       values = toset(concat(split(",", each.value.host), [aws_elastic_beanstalk_environment.beanstalk_environment.cname]))
     }
+    dynamic "path_pattern" {
+      for_each = toset(length(try(each.value.path_patterns, [])) > 0 ? [1] : [])
+      content {
+        values = each.value.path_patterns
+      }
+    }
+    dynamic "query_string" {
+      for_each = toset(length(try(each.value.query_strings, [])) > 0 ? [1] : [])
+      content {
+        value = each.value.query_strings
+      }
+    }
+    dynamic "http_header" {
+      for_each = try(each.value.http_headers, [])
+      content {
+        http_header_name = http_header.value.name
+        values           = http_header.value.values
+      }
+    }
+    dynamic "path_pattern" {
+      for_each = toset(length(try(each.value.path_patterns, [])) > 0 ? [1] : [])
+      content {
+        values = each.value.path_patterns
+      }
+    }
+    dynamic "source_ip" {
+      for_each = toset(length(try(each.value.source_ips, [])) > 0 ? [1] : [])
+      content {
+        values = each.value.source_ips
+      }
+    }
   }
   tags = merge(var.extra_tags, {
     Name        = "Rule for ${aws_elastic_beanstalk_environment.beanstalk_environment.id} - ${each.value.process}"
