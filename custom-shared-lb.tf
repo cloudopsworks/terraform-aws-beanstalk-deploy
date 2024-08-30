@@ -22,51 +22,76 @@ data "aws_lb_listener" "lb_listener" {
   port              = local.sh_port_mappings[each.value.process].from_port
 }
 
-resource "random_string" "random" {
-  for_each = local.sh_rule_mappings
-  length   = 4
-  special  = false
-  upper    = false
-  keepers = {
-    envid            = aws_elastic_beanstalk_environment.beanstalk_environment.id
-    backend_protocol = local.sh_port_mappings[each.value.process].backend_protocol
-  }
+# resource "random_string" "random" {
+#   for_each = local.sh_rule_mappings
+#   length   = 4
+#   special  = false
+#   upper    = false
+#   keepers = {
+#     envid            = aws_elastic_beanstalk_environment.beanstalk_environment.id
+#     backend_protocol = local.sh_port_mappings[each.value.process].backend_protocol
+#   }
+# }
+
+# resource "aws_lb_target_group" "lb_tg" {
+#   depends_on = [
+#     aws_elastic_beanstalk_environment.beanstalk_environment
+#   ]
+#   for_each = local.sh_rule_mappings
+#   name     = "${aws_elastic_beanstalk_environment.beanstalk_environment.id}-${each.key}-${random_string.random[each.key].result}-tg"
+#   port     = local.sh_port_mappings[each.value.process].to_port
+#   protocol = local.sh_port_mappings[each.value.process].backend_protocol
+#   vpc_id   = data.aws_lb.shared_lb[0].vpc_id
+#   health_check {
+#     enabled             = try(local.sh_port_mappings[each.value.process].health_check.enabled, true)
+#     healthy_threshold   = try(local.sh_port_mappings[each.value.process].health_check.healthy_threshold, 2)
+#     unhealthy_threshold = try(local.sh_port_mappings[each.value.process].health_check.unhealthy_threshold, 2)
+#     timeout             = try(local.sh_port_mappings[each.value.process].health_check.timeout, 5)
+#     interval            = try(local.sh_port_mappings[each.value.process].health_check.interval, 10)
+#     path                = try(local.sh_port_mappings[each.value.process].health_check.path, "/")
+#     port                = try(local.sh_port_mappings[each.value.process].health_check.port, "traffic-port")
+#     protocol            = try(local.sh_port_mappings[each.value.process].health_check.protocol, local.sh_port_mappings[each.value.process].backend_protocol)
+#     matcher             = try(local.sh_port_mappings[each.value.process].health_check.matcher, "200-302")
+#   }
+#   tags = merge(var.extra_tags, {
+#     Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+#     Namespace   = var.namespace
+#     Release     = var.release_name
+#   })
+#   #   lifecycle {
+#   #     create_before_destroy = true
+#   #   }
+# }
+#
+# resource "aws_autoscaling_attachment" "lb_tg_att" {
+#   for_each               = local.sh_rule_mappings
+#   autoscaling_group_name = aws_elastic_beanstalk_environment.beanstalk_environment.autoscaling_groups[0]
+#   lb_target_group_arn    = aws_lb_target_group.lb_tg[each.key].arn
+# }
+
+data "aws_autoscaling_group" "app" {
+  name = aws_elastic_beanstalk_environment.beanstalk_environment.autoscaling_groups[0]
 }
 
-resource "aws_lb_target_group" "lb_tg" {
-  depends_on = [
-    aws_elastic_beanstalk_environment.beanstalk_environment
-  ]
-  for_each = local.sh_rule_mappings
-  name     = "${aws_elastic_beanstalk_environment.beanstalk_environment.id}-${each.key}-${random_string.random[each.key].result}-tg"
-  port     = local.sh_port_mappings[each.value.process].to_port
-  protocol = local.sh_port_mappings[each.value.process].backend_protocol
-  vpc_id   = data.aws_lb.shared_lb[0].vpc_id
-  health_check {
-    enabled             = try(local.sh_port_mappings[each.value.process].health_check.enabled, true)
-    healthy_threshold   = try(local.sh_port_mappings[each.value.process].health_check.healthy_threshold, 2)
-    unhealthy_threshold = try(local.sh_port_mappings[each.value.process].health_check.unhealthy_threshold, 2)
-    timeout             = try(local.sh_port_mappings[each.value.process].health_check.timeout, 5)
-    interval            = try(local.sh_port_mappings[each.value.process].health_check.interval, 10)
-    path                = try(local.sh_port_mappings[each.value.process].health_check.path, "/")
-    port                = try(local.sh_port_mappings[each.value.process].health_check.port, "traffic-port")
-    protocol            = try(local.sh_port_mappings[each.value.process].health_check.protocol, local.sh_port_mappings[each.value.process].backend_protocol)
-    matcher             = try(local.sh_port_mappings[each.value.process].health_check.matcher, "200-302")
-  }
-  tags = merge(var.extra_tags, {
-    Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
-    Namespace   = var.namespace
-    Release     = var.release_name
-  })
-  lifecycle {
-    create_before_destroy = true
-  }
+data "aws_lb_target_group" "lb_tgs" {
+  for_each = data.aws_autoscaling_group.app.target_group_arns
+  arn      = each.value
 }
 
-resource "aws_autoscaling_attachment" "lb_tg_att" {
-  for_each               = local.sh_rule_mappings
-  autoscaling_group_name = aws_elastic_beanstalk_environment.beanstalk_environment.autoscaling_groups[0]
-  lb_target_group_arn    = aws_lb_target_group.lb_tg[each.key].arn
+locals {
+  lb_tg_map = merge([
+    for lb_tg in data.aws_lb_target_group.lb_tgs : {
+      for key, port_mapping in local.sh_port_mappings : key => lb_tg
+      if strcontains(lb_tg.name, key)
+    }
+  ]...)
+}
+
+resource "null_resource" "lb_rule_keep" {
+  for_each = local.sh_rule_mappings
+  triggers = {
+    target_group_arn = local.lb_tg_map[each.value.process].arn
+  }
 }
 
 resource "aws_lb_listener_rule" "lb_listener_rule" {
@@ -75,7 +100,7 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
   priority     = each.value.priority
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.lb_tg[each.key].arn
+    target_group_arn = local.lb_tg_map[each.value.process].arn
   }
   condition {
     host_header {
@@ -88,4 +113,9 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
     Namespace   = var.namespace
     Release     = var.release_name
   })
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.lb_rule_keep[each.key]
+    ]
+  }
 }
