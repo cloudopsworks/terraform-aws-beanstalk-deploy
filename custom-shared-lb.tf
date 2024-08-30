@@ -106,4 +106,9 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
     Namespace   = var.namespace
     Release     = var.release_name
   })
+  lifecycle {
+    replace_triggered_by = [
+      local.lb_tg_map[each.value.process].arn
+    ]
+  }
 }
