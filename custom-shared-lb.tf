@@ -74,14 +74,14 @@ data "aws_autoscaling_group" "app" {
 }
 
 locals {
-  lb_tg_map = [
+  lb_tg_map = merge([
     for group_arn in data.aws_autoscaling_group.app.target_group_arns : {
       for key, port_mapping in local.sh_port_mappings : key => {
         arn = group_arn
       }
       if strcontains(group_arn, key)
     }
-  ]
+  ]...)
 }
 
 resource "null_resource" "lb_rule_keep" {
