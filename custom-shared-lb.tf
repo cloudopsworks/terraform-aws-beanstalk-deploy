@@ -73,18 +73,15 @@ data "aws_autoscaling_group" "app" {
   name = aws_elastic_beanstalk_environment.beanstalk_environment.autoscaling_groups[0]
 }
 
-data "aws_lb_target_group" "lb_tgs" {
-  for_each = data.aws_autoscaling_group.app.target_group_arns
-  arn      = each.value
-}
-
 locals {
-  lb_tg_map = merge([
-    for lb_tg in data.aws_lb_target_group.lb_tgs : {
-      for key, port_mapping in local.sh_port_mappings : key => lb_tg
-      if strcontains(lb_tg.name, key)
+  lb_tg_map = [
+    for group_arn in data.aws_autoscaling_group.app.target_group_arns : {
+      for key, port_mapping in local.sh_port_mappings : key => {
+        arn = group_arn
+      }
+      if strcontains(group_arn, key)
     }
-  ]...)
+  ]
 }
 
 resource "null_resource" "lb_rule_keep" {
