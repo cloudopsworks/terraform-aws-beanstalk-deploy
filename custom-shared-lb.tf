@@ -81,8 +81,8 @@ data "aws_lb_target_group" "lb_tgs" {
 locals {
   lb_tg_map = merge([
     for lb_tg in data.aws_lb_target_group.lb_tgs : {
-      for k, v in local.sh_rule_mappings : k => lb_tg
-      if strcontains(lb_tg.name, k)
+      for key, port_mapping in local.sh_port_mappings : key => lb_tg
+      if strcontains(lb_tg.name, key)
     }
   ]...)
 }
