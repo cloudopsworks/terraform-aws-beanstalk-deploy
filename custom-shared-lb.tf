@@ -122,12 +122,6 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
         values           = http_header.value.values
       }
     }
-    dynamic "path_pattern" {
-      for_each = toset(length(try(each.value.path_patterns, [])) > 0 ? [1] : [])
-      content {
-        values = each.value.path_patterns
-      }
-    }
     dynamic "source_ip" {
       for_each = toset(length(try(each.value.source_ips, [])) > 0 ? [1] : [])
       content {
