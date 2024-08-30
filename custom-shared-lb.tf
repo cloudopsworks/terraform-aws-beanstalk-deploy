@@ -22,16 +22,16 @@ data "aws_lb_listener" "lb_listener" {
   port              = local.sh_port_mappings[each.value.process].from_port
 }
 
-resource "random_string" "random" {
-  for_each = local.sh_rule_mappings
-  length   = 4
-  special  = false
-  upper    = false
-  keepers = {
-    envid            = aws_elastic_beanstalk_environment.beanstalk_environment.id
-    backend_protocol = local.sh_port_mappings[each.value.process].backend_protocol
-  }
-}
+# resource "random_string" "random" {
+#   for_each = local.sh_rule_mappings
+#   length   = 4
+#   special  = false
+#   upper    = false
+#   keepers = {
+#     envid            = aws_elastic_beanstalk_environment.beanstalk_environment.id
+#     backend_protocol = local.sh_port_mappings[each.value.process].backend_protocol
+#   }
+# }
 
 # resource "aws_lb_target_group" "lb_tg" {
 #   depends_on = [
@@ -108,7 +108,7 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
   })
   lifecycle {
     replace_triggered_by = [
-      local.lb_tg_map[each.value.process].arn
+      action.target_group_arn
     ]
   }
 }
