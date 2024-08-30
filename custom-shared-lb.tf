@@ -87,6 +87,13 @@ locals {
   ]...)
 }
 
+resource "null_resource" "lb_rule_keep" {
+  for_each = local.sh_rule_mappings
+  triggers = {
+    target_group_arn = local.lb_tg_map[each.value.process].arn
+  }
+}
+
 resource "aws_lb_listener_rule" "lb_listener_rule" {
   for_each     = local.sh_rule_mappings
   listener_arn = data.aws_lb_listener.lb_listener[each.key].arn
@@ -108,7 +115,7 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
   })
   lifecycle {
     replace_triggered_by = [
-      action.target_group_arn
+      null_resource.lb_rule_keep[each.key]
     ]
   }
 }
