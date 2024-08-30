@@ -159,13 +159,7 @@ variable "port_mappings" {
 }
 
 variable "rule_mappings" {
-  type = list(object({
-    name     = string
-    process  = string
-    host     = string
-    path     = optional(string, "")
-    priority = optional(number, 1)
-  }))
+  type        = any
   default     = []
   description = "(optional) Mappings of Load balancer ports."
   nullable    = false
