@@ -29,8 +29,7 @@ locals {
   lookup_solution   = lookup(local.solutions, var.solution_stack, "")
   selected_solution = local.lookup_solution == "" ? (var.solution_stack == "" ? local.default_solution : var.solution_stack) : local.lookup_solution
 
-  #rule_m_str    = "${jsonencode(var.rule_mappings)}-${jsonencode(var.port_mappings)}"
-  rule_m_str    = "${jsonencode(var.port_mappings)}"
+  rule_m_str    = "${var.custom_shared_rules == false ? jsonencode(var.rule_mappings) : "SHARED"}-${jsonencode(var.port_mappings)}"
   rule_name_sha = sha256(local.rule_m_str)
 }
 
