@@ -79,9 +79,12 @@ data "aws_lb_target_group" "lb_tgs" {
 }
 
 locals {
-  lb_tg_map = {
-    for lb_tg in data.aws_lb_target_group.lb_tgs : lb_tg.port => lb_tg
-  }
+  lb_tg_map = merge([
+    for lb_tg in data.aws_lb_target_group.lb_tgs : {
+      for k, v in local.sh_rule_mappings : k => lb_tg
+      if strcontains(lb_tg.name, k)
+    }
+  ]...)
 }
 
 resource "aws_lb_listener_rule" "lb_listener_rule" {
@@ -90,7 +93,7 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
   priority     = each.value.priority
   action {
     type             = "forward"
-    target_group_arn = local.lb_tg_map[local.sh_port_mappings[each.value.process].to_port].arn
+    target_group_arn = local.lb_tg_map[each.value.process].arn
   }
   condition {
     host_header {
