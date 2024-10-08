@@ -73,16 +73,13 @@ data "aws_autoscaling_group" "app" {
   name = aws_elastic_beanstalk_environment.beanstalk_environment.autoscaling_groups[0]
 }
 
-data "aws_lb_target_group" "lb_tgs" {
-  for_each = data.aws_autoscaling_group.app.target_group_arns
-  arn      = each.value
-}
-
 locals {
   lb_tg_map = merge([
-    for lb_tg in data.aws_lb_target_group.lb_tgs : {
-      for key, port_mapping in local.sh_port_mappings : key => lb_tg
-      if strcontains(lb_tg.name, key)
+    for group_arn in data.aws_autoscaling_group.app.target_group_arns : {
+      for key, port_mapping in local.sh_port_mappings : key => {
+        arn = group_arn
+      }
+      if strcontains(group_arn, key)
     }
   ]...)
 }
@@ -105,6 +102,31 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
   condition {
     host_header {
       values = toset(concat(split(",", each.value.host), [aws_elastic_beanstalk_environment.beanstalk_environment.cname]))
+    }
+    dynamic "path_pattern" {
+      for_each = toset(length(try(each.value.path_patterns, [])) > 0 ? [1] : [])
+      content {
+        values = each.value.path_patterns
+      }
+    }
+    dynamic "query_string" {
+      for_each = toset(length(try(each.value.query_strings, [])) > 0 ? [1] : [])
+      content {
+        value = each.value.query_strings
+      }
+    }
+    dynamic "http_header" {
+      for_each = try(each.value.http_headers, [])
+      content {
+        http_header_name = http_header.value.name
+        values           = http_header.value.values
+      }
+    }
+    dynamic "source_ip" {
+      for_each = toset(length(try(each.value.source_ips, [])) > 0 ? [1] : [])
+      content {
+        values = each.value.source_ips
+      }
     }
   }
   tags = merge(var.extra_tags, {

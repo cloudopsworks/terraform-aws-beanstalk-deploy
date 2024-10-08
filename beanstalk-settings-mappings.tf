@@ -265,13 +265,13 @@ locals {
         name      = "PathPatterns"
         namespace = "aws:elbv2:listenerrule:${r.name}"
         resource  = ""
-        value     = r.path
+        value     = try(r.path, "/")
       },
       {
         name      = "Priority"
         namespace = "aws:elbv2:listenerrule:${r.name}"
         resource  = ""
-        value     = tostring(r.priority)
+        value     = tostring(try(r.priority, 1))
       },
       {
         name      = "Process"
