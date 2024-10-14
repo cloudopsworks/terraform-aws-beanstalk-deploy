@@ -1,3 +1,9 @@
+##
+# (c) 2021-2024 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+
 locals {
   envsgprefix   = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
   sglb_name     = format("%s-%s", local.envsgprefix, "lb-sg")

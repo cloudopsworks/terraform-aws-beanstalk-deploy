@@ -1,3 +1,9 @@
+##
+# (c) 2021-2024 - Cloud Ops Works LLC - https://cloudops.works/
+#            On GitHub: https://github.com/cloudopsworks
+#            Distributed Under Apache v2.0 License
+#
+
 output "environment_cname" {
   value = aws_elastic_beanstalk_environment.beanstalk_environment.cname
 }
