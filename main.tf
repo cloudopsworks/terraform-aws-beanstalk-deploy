@@ -82,13 +82,14 @@ resource "null_resource" "shared_lb_rules" {
 }
 
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
-  name                = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
-  description         = "Managed by IAC - Do not modify out of Terraform"
-  application         = data.aws_elastic_beanstalk_application.application.name
-  cname_prefix        = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
-  tier                = "WebServer"
-  version_label       = var.application_version_label
-  solution_stack_name = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
+  name                   = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+  description            = "Managed by IAC - Do not modify out of Terraform"
+  application            = data.aws_elastic_beanstalk_application.application.name
+  cname_prefix           = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
+  tier                   = "WebServer"
+  version_label          = var.application_version_label
+  solution_stack_name    = data.aws_elastic_beanstalk_solution_stack.solution_stack.name
+  wait_for_ready_timeout = var.wait_for_ready_timeout
   #template_name = aws_elastic_beanstalk_configuration_template.beanstalk_environment.name
 
   dynamic "setting" {
