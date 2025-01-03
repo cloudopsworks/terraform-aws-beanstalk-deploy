@@ -270,3 +270,9 @@ variable "custom_shared_rules" {
   default     = false
   description = "(optional) Setting to make Application Load Balancer, defaults to public Load Balancer, Default: false"
 }
+
+variable "wait_for_ready_timeout" {
+  type        = string
+  default     = "20m"
+  description = "(optional) Time in minutes to wait for the environment to be ready. Default: 10 minutes."
+}
