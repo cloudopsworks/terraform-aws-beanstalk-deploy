@@ -1,0 +1,36 @@
+name: Terraform AWS ElasticBeanstalk Deployment Module
+#logo: logo/logo.jpg
+
+license: "APACHE2"
+
+copyrights:
+  - name: "Cloud Ops Works LLC"
+    url: "https://cloudops.works"
+    year: "2024"
+
+github_repo: cloudopsworks/terraform-aws-beanstalk-deploy
+
+description: |-
+  This module deploys an Elastic Beanstalk application and environment using Terraform. 
+  It allows for the configuration of various settings such as application version, environment type, and scaling options.
+
+# Introduction to the project
+introduction: |-
+#  This is an introduction.
+
+# How to use this project
+usage: |-
+
+# Example usage
+examples: |-
+
+# How to get started quickly
+quickstart: |-
+
+include:
+  - "docs/targets.md"
+  - "docs/terraform.md"
+
+contributors:
+  - name: "Cristian Beraha"
+    github: "berahac"
