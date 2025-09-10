@@ -54,7 +54,7 @@ data "aws_lb_listener" "lb_listener" {
 #     matcher             = try(local.sh_port_mappings[each.value.process].health_check.matcher, "200-302")
 #   }
 #   tags = merge(var.extra_tags, {
-#     Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+#     Environment = local.env_prefix
 #     Namespace   = var.namespace
 #     Release     = var.release_name
 #   })
@@ -131,7 +131,7 @@ resource "aws_lb_listener_rule" "lb_listener_rule" {
   }
   tags = merge(var.extra_tags, {
     Name        = "Rule for ${aws_elastic_beanstalk_environment.beanstalk_environment.id} - ${each.value.process}"
-    Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+    Environment = local.env_prefix
     Namespace   = var.namespace
     Release     = var.release_name
   })
