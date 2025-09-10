@@ -4,6 +4,7 @@
 #            Distributed Under Apache v2.0 License
 #
 locals {
+  env_prefix       = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
   default_solution = "java"
   solutions = {
     java         = "^64bit Amazon Linux 2023 (.*) running Corretto 21(.*)$"
@@ -51,6 +52,12 @@ locals {
   selected_solution = local.lookup_solution == "" ? (var.solution_stack == "" ? local.default_solution : var.solution_stack) : local.lookup_solution
   rule_m_str        = "${var.custom_shared_rules == false ? jsonencode(var.rule_mappings) : "SHARED"}-${jsonencode(var.port_mappings)}"
   rule_name_sha     = sha256(local.rule_m_str)
+  all_tags = merge(var.extra_tags, {
+    Environment = local.env_prefix
+    Namespace   = var.namespace
+    Release     = var.release_name
+    managed-by  = "iac"
+  })
 }
 
 data "aws_elastic_beanstalk_solution_stack" "solution_stack" {
@@ -74,7 +81,7 @@ resource "null_resource" "shared_lb_rules" {
 }
 
 resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
-  name                   = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
+  name                   = local.env_prefix
   description            = "Managed by IAC - Do not modify out of Terraform"
   application            = data.aws_elastic_beanstalk_application.application.name
   cname_prefix           = var.load_balancer_alias != "" ? var.load_balancer_alias : "${var.release_name}-${var.namespace}-ingress"
@@ -94,11 +101,7 @@ resource "aws_elastic_beanstalk_environment" "beanstalk_environment" {
     }
   }
 
-  tags = merge(var.extra_tags, {
-    Environment = var.beanstalk_environment != "" ? var.beanstalk_environment : "${var.release_name}-${var.namespace}"
-    Namespace   = var.namespace
-    Release     = var.release_name
-  })
+  tags = local.all_tags
 
   lifecycle {
     create_before_destroy = false
