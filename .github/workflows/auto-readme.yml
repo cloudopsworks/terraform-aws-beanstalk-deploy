@@ -1,3 +1,11 @@
+##
+# (c) 2021-2026
+#     Cloud Ops Works LLC - https://cloudops.works/
+#     Find us on:
+#       GitHub: https://github.com/cloudopsworks
+#       WebSite: https://cloudops.works
+#     Distributed Under Apache v2.0 License
+#
 name: 'auto-readme'
 
 on:
@@ -12,30 +20,52 @@ on:
   schedule:
     - cron:  '0 0 * * *'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
       - name: readme/update
         shell: bash
         env:
-          GITHUB_TOKEN: "${{ secrets.BOT_TOKEN }}"
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
           make init
           make readme/deps
           make readme
+      # Create a PR only if not on a pull request event (to avoid error)
       - name: Create Pull Request
-        uses: cloudopsworks/create-pull-request@v4
-        with: 
+        uses: peter-evans/create-pull-request@v8
+        if: (github.event_name != 'pull_request')
+        with:
           labels: automated pr
-        env:
           token: ${{ secrets.BOT_TOKEN }}
           commit-message: Update README.md
           title: Automatic Update of README.md
           body: |-
             This is an auto-generated PR which updates the `README.md` from the `README.yaml` 
             using the [`cloudopsworks/tronador`](https://github.com/cloudopsworks/tronador).
-          branch: github-actions/auto-readme
+          branch: feature/auto-readme
           #branch-suffix: none
+      # Push the code into PR if we are in a pull request event
+      - name: Push changes
+        if: (github.event_name == 'pull_request')
+        run: |
+          git config --global user.name "$GITACTOR"
+          git config --global user.email "${GITEMAIL}@users.noreply.github.com"
+          git add README.md docs/
+          git commit -m "Updated README.md" || echo "No changes to commit"
+          git push origin HEAD:$GITHEADREF || echo "No changes to push"
+        env:
+          GITACTOR: ${{ github.actor }}
+          GITEMAIL: ${{ github.actor_id }}+${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GITHEADREF: ${{ github.head_ref }}
