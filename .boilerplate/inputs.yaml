@@ -1,18 +1,164 @@
 # Module configuration
-# Required variables
-{{- range .requiredVariables }}
-{{- if ne .Name "org"}}
-# Description {{ .Description }} , Type: {{ .Type }}
-{{ .Name }}: {{ .DefaultValuePlaceholder }}
-{{- end }}
+#
+# AWS Elastic Beanstalk Deployment module inputs.
+# Values below are copied into every scaffolded deployment directory.
+# Uncomment and adjust the optional keys you need; required keys must always be set.
 
-{{- end }}
-# Optional variables
-{{- range .optionalVariables }}
-{{- if ne .Name "is_hub" "spoke_def" "extra_args" }}
-# Description {{ .Description }} , Type: {{ .Type }}
-#{{ .Name }}: {{ .DefaultValue }}
-{{- end }}
+## ---------------------------------------------------------------------------
+## Naming & release identity
+## ---------------------------------------------------------------------------
+release_name: "myapp"            # (Required) Release name used to name/prefix all created resources. Combined with `namespace` to build the environment name.
+namespace: "dev"                 # (Required) Namespace that determines environment naming (e.g. dev, qa, stg, prod). Used as the environment name suffix and as the `Namespace` tag.
+application_version_label: "1.0.0" # (Required) Elastic Beanstalk application version label to deploy into the environment. Must already exist in the application.
 
-{{- end }}
+## ---------------------------------------------------------------------------
+## Provider / account context
+## ---------------------------------------------------------------------------
+sts_assume_role: ""              # (Required) Role ARN used by the deployment pipeline to assume into the target account. Kept for pipeline compatibility; leave empty when the root Terragrunt configuration already supplies provider credentials.
+#region: "us-east-1"             # (Optional) AWS region. Default: "us-east-1". Also used to compose the ACM certificate ARN from `load_balancer_ssl_certificate_id`.
 
+## ---------------------------------------------------------------------------
+## Target Elastic Beanstalk application
+## ---------------------------------------------------------------------------
+beanstalk_application: "myapp"   # (Required) Existing Elastic Beanstalk application name to deploy to. The module looks it up, it does not create it.
+#beanstalk_environment: ""       # (Optional) Explicit environment name. Default: "" — when empty the name is built as "<release_name>-<namespace>".
+
+## Solution stack — either one of the shortcut keys below or the full AWS solution stack
+## name (pin the full name to prevent unintended platform upgrades).
+## Valid shortcut keys:
+##   java, java8, java11, java17, java17_23, tomcat, tomcatj8, tomcatj11, tomcatj17,
+##   node, node22, node14, node16, node18, node18_23,
+##   go, go_al2, docker, docker-m,
+##   dotnet, dotnet-core, dotnet-6, dotnet-8, dotnet-9,
+##   dotnet-w16, dotnet-w19, dotnet-w22, dotnet-w25,
+##   net-core-w16, net-core-w19, net-core-w22, net-core-w25,
+##   python, python313, python312, python311, python39, python38, python37
+#solution_stack: "java"          # (Optional) Default: "java" (64bit Amazon Linux 2023 running Corretto 21). The shortcut resolves to the most recent matching AWS stack.
+
+#wait_for_ready_timeout: "20m"   # (Optional) How long to wait for the environment to become Ready. Default: "20m".
+
+## ---------------------------------------------------------------------------
+## Networking
+## ---------------------------------------------------------------------------
+vpc_id: "vpc-0123456789abcdef0"  # (Required) VPC ID where the environment (load balancer and instances) runs.
+#private_subnets: []             # (Optional) List of private subnet IDs for the instances and for an internal load balancer. Default: [].
+#public_subnets: []              # (Optional) List of public subnet IDs for an internet-facing load balancer. Required when `load_balancer_public = true`. Default: [].
+#place_on_public: false          # (Optional) Place EC2 instances on the public subnets and associate public IPs. Default: false.
+
+## ---------------------------------------------------------------------------
+## Load balancer
+## ---------------------------------------------------------------------------
+load_balancer_log_bucket: "my-elb-logs-bucket" # (Required) S3 bucket name where load balancer access logs are stored.
+load_balancer_log_prefix: "myapp/dev"          # (Required) Prefix for the load balancer access log objects inside the bucket.
+load_balancer_ssl_certificate_id: "00000000-0000-0000-0000-000000000000" # (Required) ACM certificate ID (the UUID, not the full ARN) in the same region. The module composes the full ARN as arn:aws:acm:<region>:<account_id>:certificate/<id>.
+
+#load_balancer_public: false     # (Optional) Expose the load balancer to the Internet. Default: false (internal).
+#load_balancer_alias: ""         # (Optional) CNAME prefix for the environment. Default: "" — when empty it is built as "<release_name>-<namespace>-ingress".
+#load_balancer_ssl_policy: "ELBSecurityPolicy-2016-08" # (Optional) SSL negotiation policy applied to HTTPS listeners. Default: "ELBSecurityPolicy-2016-08".
+
+## Shared load balancer — attach this environment to an existing ALB instead of
+## provisioning a dedicated one.
+#load_balancer_shared: false     # (Optional) Use a shared (pre-existing) Application Load Balancer. Default: false.
+#load_balancer_shared_name: ""   # (Optional) Name of the shared ALB to attach to. Required when `load_balancer_shared = true`. Default: "".
+#load_balancer_shared_weight: 0  # (Optional) Traffic weight assigned on the shared load balancer. Default: 0.
+#custom_shared_rules: false      # (Optional) Manage shared-ALB listener rules as native aws_lb_listener_rule resources instead of Beanstalk `aws:elbv2:listenerrule` options. Enables advanced conditions (path patterns, query strings, HTTP headers, source IPs). Default: false.
+
+## Listener / process port mappings.
+## Each entry defines a Beanstalk process and its matching listener.
+## The entry named "default" maps to the default listener.
+#port_mappings:                  # (Optional) Default: a single "default" process on 80 -> 8080.
+#  - name: "default"             # (Required) Process name. "default" is the default listener/process.
+#    from_port: 80               # (Required) Listener port on the load balancer.
+#    to_port: 8080               # (Required) Port the application listens on inside the instance.
+#    protocol: "HTTP"            # (Optional) Listener protocol: HTTP | HTTPS. Default: "HTTP". HTTPS listeners get the SSL certificate and policy applied automatically.
+#    backend_protocol: "HTTP"    # (Optional) Protocol used towards the instances: HTTP | HTTPS. Default: "HTTP".
+#    deregistration_delay: 20    # (Optional) Target group deregistration delay in seconds. Default: 20.
+#    rules: []                   # (Optional) Names of `rule_mappings` entries bound to this listener. Only used when `load_balancer_shared = true` and `custom_shared_rules = false`. Default: [].
+#    health_check:               # (Optional) Target group health check.
+#      path: "/"                 # (Optional) Health check path. Default: "/".
+#      interval: 15              # (Optional) Seconds between checks. Default: 15.
+#      timeout: 5                # (Optional) Check timeout in seconds. Default: 5.
+#      healthy_threshold: 3      # (Optional) Consecutive successes to mark healthy. Default: 3.
+#      unhealthy_threshold: 5    # (Optional) Consecutive failures to mark unhealthy. Default: 5.
+#      matcher: "200-302"        # (Optional) Expected HTTP status codes. Default: "200-302".
+#    stickiness:                 # (Optional) Target group session stickiness.
+#      enabled: false            # (Optional) Enable stickiness. Default: false.
+#      duration: 86400           # (Optional) Cookie duration in seconds. Default: 86400.
+#      cookie: "lb_cookie"       # (Optional) Stickiness type: lb_cookie | app_cookie. Default: "lb_cookie".
+
+## Listener rules used to route traffic to a given process.
+#rule_mappings:                  # (Optional) Default: [].
+#  - name: "api"                 # (Required) Rule name. Referenced from `port_mappings[].rules` when `custom_shared_rules = false`.
+#    process: "api"              # (Required) Name of the `port_mappings` entry that receives the traffic.
+#    host: "api.example.com"     # (Required) Host header match. Comma-separated list for multiple hosts.
+#    priority: 100               # (Optional) Rule evaluation priority. Default: 1.
+#    path: "/"                   # (Optional) Path pattern, used when `custom_shared_rules = false`. Default: "/".
+#    path_patterns: []           # (Optional) Path patterns list, used only when `custom_shared_rules = true`. Default: [].
+#    query_strings: []           # (Optional) Query string conditions, used only when `custom_shared_rules = true`. Default: [].
+#    source_ips: []              # (Optional) Source IP CIDR conditions, used only when `custom_shared_rules = true`. Default: [].
+#    http_headers: []            # (Optional) HTTP header conditions, used only when `custom_shared_rules = true`. Each item: { name: "X-Header", values: ["value"] }. Default: [].
+
+## ---------------------------------------------------------------------------
+## Compute & scaling
+## ---------------------------------------------------------------------------
+#server_types: ["t3a.micro"]     # (Optional) EC2 instance types. The first item is used for on-demand instances. Default: ["t3a.micro"].
+#beanstalk_min_instances: 1      # (Optional) Auto Scaling group minimum size. Default: 1.
+#beanstalk_max_instances: 1      # (Optional) Auto Scaling group maximum size. Default: 1.
+#beanstalk_instance_port: 80     # (Optional) Port the platform proxy (NGINX/IIS) listens on inside the instance. Default: 80.
+#beanstalk_instance_volume_size: 8   # (Optional) Root EBS volume size in GB. Default: 8.
+#beanstalk_instance_volume_type: "gp2" # (Optional) Root EBS volume type: gp2 | gp3 | io1 | standard. Default: "gp2".
+#beanstalk_ami_id: ""            # (Optional) Pin a specific AMI ID for the platform. Default: "" (AWS-managed AMI).
+#beanstalk_ec2_key: ""           # (Optional) Existing EC2 key pair name for SSH access. Default: "" (use SSM Session Manager instead).
+
+## Spot instances — validate thoroughly before enabling on production workloads.
+#beanstalk_enable_spot: false    # (Optional) Enable Spot instance requests for the Auto Scaling group. Default: false.
+#beanstalk_spot_price: ""        # (Optional) Maximum Spot price. Default: "" (on-demand price cap).
+#beanstalk_spot_base_ondemand: 0 # (Optional) Number of on-demand instances provisioned before Spot capacity is used. Default: 0.
+#beanstalk_spot_base_ondemand_percent: 0 # (Optional) Percentage of on-demand instances above the base count. Default: 0.
+
+## ---------------------------------------------------------------------------
+## IAM
+## ---------------------------------------------------------------------------
+#beanstalk_instance_profile: "aws-elasticbeanstalk-ec2-role"   # (Optional) Existing EC2 instance profile name. Must exist before deployment. Default: "aws-elasticbeanstalk-ec2-role".
+#beanstalk_service_role: "aws-elasticbeanstalk-service-role"   # (Optional) Existing Elastic Beanstalk service role name (name only, the ARN is composed). Must exist before deployment. Default: "aws-elasticbeanstalk-service-role".
+
+## ---------------------------------------------------------------------------
+## Logging
+## ---------------------------------------------------------------------------
+#beanstalk_default_retention: 7  # (Optional) CloudWatch Logs retention in days for environment and health log streams. Default: 7.
+
+## ---------------------------------------------------------------------------
+## Security groups
+## ---------------------------------------------------------------------------
+## Rules are additive: providing a non-empty list creates a dedicated security group
+## and attaches it to the load balancer / instances respectively.
+#beanstalk_lb_sg:                # (Optional) Ingress rules for the load balancer security group. Default: [].
+#  - description: "Allow HTTPS from the corporate network" # (Optional) Rule description. Default: "Allow traffic".
+#    from_port: 443              # (Optional) Start of the port range. Default: "0".
+#    to_port: 443                # (Optional) End of the port range. Default: "0".
+#    protocol: "tcp"             # (Optional) IP protocol: tcp | udp | icmp | "-1" for all. Default: "-1".
+#    cidr_block: "10.0.0.0/8"    # (Optional) Source CIDR. Mutually exclusive with `security_group` — one rule per source type.
+#    security_group: ""          # (Optional) Source security group ID. Mutually exclusive with `cidr_block`.
+#    self: false                 # (Optional) Reserved for self-referencing rules. Default: false.
+
+#beanstalk_target_sg:            # (Optional) Ingress rules for the instances security group. Default: [].
+#  - description: "Allow app port from the load balancer"
+#    from_port: 8080
+#    to_port: 8080
+#    protocol: "tcp"
+#    cidr_block: "10.0.0.0/8"
+#    security_group: ""
+#    self: false
+
+## ---------------------------------------------------------------------------
+## Escape hatch
+## ---------------------------------------------------------------------------
+## Raw Elastic Beanstalk option settings appended last, so they override anything
+## the module computes. See the AWS "Configuration options" reference for namespaces.
+#extra_settings:                 # (Optional) Default: [].
+#  - namespace: "aws:elasticbeanstalk:application:environment" # (Required) Beanstalk option namespace.
+#    name: "SPRING_PROFILES_ACTIVE"                            # (Required) Option name.
+#    value: "production"                                       # (Required) Option value.
+#    resource: ""                                              # (Optional) Resource the option applies to. Default: "" (none).
+
+#extra_files: []                 # (Optional) Reserved for future use — list of source files to pull additional information from. Currently not consumed by the module. Default: [].

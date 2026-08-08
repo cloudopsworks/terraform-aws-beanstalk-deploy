@@ -8,30 +8,31 @@
   -->
 [![README Header][readme_header_img]][readme_header_link]
 
-[![cloudopsworks][logo]](https://cloudops.works/)
+[![cloudopsworks][logo]](https://cloudopsworks.co/)
 
 # Terraform AWS ElasticBeanstalk Deployment Module
 
+ [![Latest Release](https://img.shields.io/github/release/cloudopsworks/terraform-aws-beanstalk-deploy.svg?style=for-the-badge)](https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy/releases/latest) [![Last Updated](https://img.shields.io/github/last-commit/cloudopsworks/terraform-aws-beanstalk-deploy.svg?style=for-the-badge)](https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy/commits)
 
 
+Deploys an application version into an AWS Elastic Beanstalk environment, wiring up the
+platform (solution stack), Application Load Balancer listeners and processes, Auto Scaling,
+security groups, CloudWatch logging and managed platform updates from a single Terragrunt
+`inputs.yaml`.
 
-This module deploys an Elastic Beanstalk application and environment using Terraform. 
-It allows for the configuration of various settings such as application version, environment type, and scaling options.
+The module targets an **existing** Elastic Beanstalk application and an **existing**
+application version label, so it fits naturally at the end of a CI/CD pipeline: the pipeline
+publishes the version, this module rolls it out to the environment.
 
 
 ---
 
 This project is part of our comprehensive approach towards DevOps Acceleration. 
 [<img align="right" title="Share via Email" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/ios-mail.svg"/>][share_email]
-[<img align="right" title="Share on Google+" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-googleplus.svg" />][share_googleplus]
 [<img align="right" title="Share on Facebook" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-facebook.svg" />][share_facebook]
 [<img align="right" title="Share on Reddit" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-reddit.svg" />][share_reddit]
 [<img align="right" title="Share on LinkedIn" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-linkedin.svg" />][share_linkedin]
-[<img align="right" title="Share on Twitter" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-twitter.svg" />][share_twitter]
-
-
-[![Terraform Open Source Modules](https://docs.cloudops.works/images/terraform-open-source-modules.svg)][terraform_modules]
-
+[<img align="right" title="Share on X" width="24" height="24" src="https://docs.cloudops.works/images/ionicons/logo-twitter.svg" />][share_twitter]
 
 
 It's 100% Open Source and licensed under the [APACHE2](LICENSE).
@@ -51,7 +52,43 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 
 ## Introduction
 
+This module takes the ~150 Elastic Beanstalk option settings that a production environment
+normally needs and reduces them to a small, structured set of inputs. Instead of hand-writing
+`setting { namespace = ... }` blocks, you describe the shape of the deployment — ports,
+processes, scaling limits, subnets, certificates — and the module renders the option settings
+for you.
 
+## What it manages
+
+| Area | What the module does |
+|------|----------------------|
+| Platform | Resolves a solution stack from a short key (`java`, `node`, `docker`, `python`, `dotnet`, …) to the most recent matching AWS platform, or accepts a fully pinned stack name |
+| Environment | Creates `aws_elastic_beanstalk_environment` against an existing application, deploying a given `application_version_label` |
+| Load balancing | Dedicated ALB, or attaches to a **shared** ALB; listeners, processes, target group health checks, stickiness, deregistration delay, HTTPS with ACM certificate and SSL policy |
+| Routing | Listener rules by host header, path, query string, HTTP header or source IP — either as Beanstalk `aws:elbv2:listenerrule` options or as native `aws_lb_listener_rule` resources |
+| Compute | Instance types, root volume size/type, EC2 key pair, pinned AMI, instance profile |
+| Scaling | Min/max instances, Spot fleet with on-demand base and percentage, capacity rebalancing |
+| Networking | VPC, private/public subnet placement, internal vs internet-facing load balancer |
+| Security | Optional dedicated security groups for the load balancer and for the instances, built from declarative ingress rule lists |
+| Observability | CloudWatch Logs streaming with retention, enhanced health reporting, health event streaming, X-Ray |
+| Lifecycle | Rolling updates, managed platform updates, deployment policy, configurable ready timeout |
+
+## Design notes
+
+- **The application and the version label must already exist.** The module looks the
+  application up with a data source; it never creates or uploads application versions.
+- **The instance profile and the service role must already exist.** They default to the
+  AWS-managed `aws-elasticbeanstalk-ec2-role` and `aws-elasticbeanstalk-service-role` names.
+- **Environment naming** is `<release_name>-<namespace>` unless `beanstalk_environment` is set
+  explicitly. The CNAME prefix defaults to `<release_name>-<namespace>-ingress` unless
+  `load_balancer_alias` is set.
+- **The SSL certificate is given by ID, not ARN.** The module composes
+  `arn:aws:acm:<region>:<account_id>:certificate/<load_balancer_ssl_certificate_id>`.
+- **`extra_settings` is the escape hatch.** Anything the module does not model can be pushed
+  through as raw option settings, and it is applied last so it wins over computed values.
+- Changing the listener/rule topology replaces the environment: the module hashes
+  `port_mappings` and `rule_mappings` into a `null_resource` trigger referenced by
+  `replace_triggered_by`, because Beanstalk cannot reshape listeners in place.
 
 ## Usage
 
@@ -60,16 +97,389 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 Instead pin to the release tag (e.g. `?ref=vX.Y.Z`) of one of our [latest releases](https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy/releases).
 
 
+This module is consumed through [Terragrunt](https://terragrunt.gruntwork.io/). Bootstrap a
+deployment directory with `terragrunt scaffold`, which reads `.boilerplate/boilerplate.yml`
+from this repository and generates `terragrunt.hcl`, `inputs.yaml` and `local-tags.json`.
 
+### 1. Scaffold the deployment
+
+```sh
+# Create and enter the target deployment directory first —
+# scaffold writes into the current working directory.
+mkdir -p dev/us-east-1/apps/myapp-beanstalk
+cd dev/us-east-1/apps/myapp-beanstalk
+
+# Scaffold the module (do NOT use --working-dir, it is not a valid scaffold flag)
+terragrunt scaffold github.com/cloudopsworks/terraform-aws-beanstalk-deploy
+
+# Fill in the deployment-specific values
+vi inputs.yaml
+
+# Apply
+terragrunt apply
+```
+
+Pin a release tag rather than tracking `master`, since breaking changes may land between
+releases:
+
+```sh
+terragrunt scaffold github.com/cloudopsworks/terraform-aws-beanstalk-deploy?ref=vX.Y.Z
+```
+
+### 2. Edit the generated `inputs.yaml`
+
+Scaffold pre-populates the file from `.boilerplate/inputs.yaml`, with every key and its
+`(Required)` / `(Optional)` comment. A minimal deployment only needs the required keys:
+
+```yaml
+# Module configuration
+
+## Naming & release identity
+release_name: "myapp"            # (Required) Release name used to name/prefix all created resources.
+namespace: "dev"                 # (Required) Namespace that determines environment naming (dev, qa, stg, prod).
+application_version_label: "1.0.0" # (Required) Existing application version label to deploy.
+
+## Provider / account context
+sts_assume_role: ""              # (Required) Role ARN used by the pipeline to assume into the target account.
+#region: "us-east-1"             # (Optional) AWS region. Default: "us-east-1".
+
+## Target Elastic Beanstalk application
+beanstalk_application: "myapp"   # (Required) Existing Elastic Beanstalk application name.
+#beanstalk_environment: ""       # (Optional) Explicit environment name. Default: "" -> "<release_name>-<namespace>".
+#solution_stack: "java"          # (Optional) Shortcut key or full AWS stack name. Default: "java".
+#wait_for_ready_timeout: "20m"   # (Optional) Wait for the environment to become Ready. Default: "20m".
+
+## Networking
+vpc_id: "vpc-0123456789abcdef0"  # (Required) VPC ID where the environment runs.
+#private_subnets: []             # (Optional) Private subnet IDs for instances and internal LB. Default: [].
+#public_subnets: []              # (Optional) Public subnet IDs, required when load_balancer_public = true. Default: [].
+#place_on_public: false          # (Optional) Place instances on public subnets. Default: false.
+
+## Load balancer
+load_balancer_log_bucket: "my-elb-logs-bucket"  # (Required) S3 bucket for access logs.
+load_balancer_log_prefix: "myapp/dev"           # (Required) Prefix for access log objects.
+load_balancer_ssl_certificate_id: "00000000-0000-0000-0000-000000000000" # (Required) ACM certificate ID (UUID, not ARN).
+#load_balancer_public: false     # (Optional) Internet-facing load balancer. Default: false (internal).
+#load_balancer_alias: ""         # (Optional) CNAME prefix. Default: "" -> "<release_name>-<namespace>-ingress".
+#load_balancer_ssl_policy: "ELBSecurityPolicy-2016-08" # (Optional) SSL negotiation policy.
+```
+
+Everything else — `port_mappings`, `rule_mappings`, scaling, Spot, security groups and
+`extra_settings` — is documented inline in the generated file and shown under
+[Examples](#examples) below.
+
+### 3. The generated `terragrunt.hcl`
+
+Scaffold renders this from `.boilerplate/terragrunt.hcl`; it is not meant to be hand-authored.
+It loads `inputs.yaml` as `local.local_vars`, merges the tag hierarchy, and maps each module
+variable — required variables directly, optional ones wrapped in `try()` with their defaults:
+
+```hcl
+locals {
+  local_vars  = yamldecode(file("./inputs.yaml"))
+  spoke_vars  = yamldecode(file(find_in_parent_folders("spoke-inputs.yaml")))
+  region_vars = yamldecode(file(find_in_parent_folders("region-inputs.yaml")))
+  env_vars    = yamldecode(file(find_in_parent_folders("env-inputs.yaml")))
+  global_vars = yamldecode(file(find_in_parent_folders("global-inputs.yaml")))
+
+  local_tags  = jsondecode(file("./local-tags.json"))
+  spoke_tags  = jsondecode(file(find_in_parent_folders("spoke-tags.json")))
+  region_tags = jsondecode(file(find_in_parent_folders("region-tags.json")))
+  env_tags    = jsondecode(file(find_in_parent_folders("env-tags.json")))
+  global_tags = jsondecode(file(find_in_parent_folders("global-tags.json")))
+
+  tags = merge(
+    local.global_tags,
+    local.env_tags,
+    local.region_tags,
+    local.spoke_tags,
+    local.local_tags
+  )
+}
+
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+terraform {
+  source = "github.com/cloudopsworks/terraform-aws-beanstalk-deploy?ref=vX.Y.Z"
+}
+
+inputs = {
+  is_hub    = false
+  org       = local.env_vars.org
+  spoke_def = local.spoke_vars.spoke
+
+  # Required
+  release_name                     = local.local_vars.release_name
+  namespace                        = local.local_vars.namespace
+  application_version_label        = local.local_vars.application_version_label
+  sts_assume_role                  = local.local_vars.sts_assume_role
+  beanstalk_application            = local.local_vars.beanstalk_application
+  vpc_id                           = local.local_vars.vpc_id
+  load_balancer_log_bucket         = local.local_vars.load_balancer_log_bucket
+  load_balancer_log_prefix         = local.local_vars.load_balancer_log_prefix
+  load_balancer_ssl_certificate_id = local.local_vars.load_balancer_ssl_certificate_id
+
+  # Optional — defaults come from the module
+  region                    = try(local.local_vars.region, "us-east-1")
+  solution_stack            = try(local.local_vars.solution_stack, "java")
+  beanstalk_environment     = try(local.local_vars.beanstalk_environment, "")
+  private_subnets           = try(local.local_vars.private_subnets, [])
+  public_subnets            = try(local.local_vars.public_subnets, [])
+  server_types              = try(local.local_vars.server_types, ["t3a.micro"])
+  beanstalk_min_instances   = try(local.local_vars.beanstalk_min_instances, 1)
+  beanstalk_max_instances   = try(local.local_vars.beanstalk_max_instances, 1)
+  port_mappings             = try(local.local_vars.port_mappings, [{ name = "default", from_port = 80, to_port = 8080 }])
+  rule_mappings             = try(local.local_vars.rule_mappings, [])
+  extra_settings            = try(local.local_vars.extra_settings, [])
+  # ... one entry per optional module variable
+
+  extra_tags = local.tags
+}
+```
+
+The `extra_tags` map is built from the merged `*-tags.json` hierarchy, so you never set it in
+`inputs.yaml`. The module adds `Environment`, `Namespace`, `Release` and `managed-by = iac`
+on top of it.
 
 ## Quick Start
 
+### Prerequisites
 
+1. An Elastic Beanstalk **application** already created in the target account.
+2. An **application version** published to that application — you deploy its label.
+3. The `aws-elasticbeanstalk-ec2-role` instance profile and `aws-elasticbeanstalk-service-role`
+   service role (or your own equivalents) present in the account.
+4. A VPC with subnets, an ACM certificate in the same region, and an S3 bucket for load
+   balancer access logs.
+5. `terragrunt` and `opentofu`/`terraform` installed, plus the Terragrunt hierarchy files
+   (`global-inputs.yaml`, `env-inputs.yaml`, `region-inputs.yaml`, `spoke-inputs.yaml` and the
+   matching `*-tags.json`) in the parent folders.
+
+### Minimal deployment
+
+```sh
+mkdir -p dev/us-east-1/apps/myapp-beanstalk
+cd dev/us-east-1/apps/myapp-beanstalk
+terragrunt scaffold github.com/cloudopsworks/terraform-aws-beanstalk-deploy
+```
+
+Set the required keys in `inputs.yaml`:
+
+```yaml
+release_name: "myapp"
+namespace: "dev"
+application_version_label: "1.0.0"
+sts_assume_role: ""
+beanstalk_application: "myapp"
+vpc_id: "vpc-0123456789abcdef0"
+private_subnets: ["subnet-aaa", "subnet-bbb"]
+load_balancer_log_bucket: "my-elb-logs-bucket"
+load_balancer_log_prefix: "myapp/dev"
+load_balancer_ssl_certificate_id: "00000000-0000-0000-0000-000000000000"
+```
+
+Then:
+
+```sh
+terragrunt plan
+terragrunt apply
+```
+
+### Rolling out a new version
+
+Point `application_version_label` at the newly published version and re-apply — the
+environment is updated in place under the configured deployment and rolling update policy:
+
+```sh
+sed -i '' 's/^application_version_label:.*/application_version_label: "1.1.0"/' inputs.yaml
+terragrunt apply
+```
+
+### Verifying the result
+
+```sh
+terragrunt output environment_name
+terragrunt output environment_cname
+terragrunt output load_balancer_address
+```
+
+### Local development of this module
+
+```sh
+make fmt     # format the HCL
+make lint    # validate and lint
+make readme  # regenerate README.md from README.yaml
+```
 
 
 ## Examples
 
+### Dedicated internet-facing load balancer, HTTPS
 
+```yaml
+release_name: "storefront"
+namespace: "prod"
+application_version_label: "2.14.0"
+sts_assume_role: "arn:aws:iam::111122223333:role/deployer"
+beanstalk_application: "storefront"
+solution_stack: "tomcatj17"
+
+vpc_id: "vpc-0123456789abcdef0"
+private_subnets: ["subnet-aaa", "subnet-bbb"]
+public_subnets: ["subnet-ccc", "subnet-ddd"]
+load_balancer_public: true
+load_balancer_alias: "storefront-prod"
+
+load_balancer_log_bucket: "acme-elb-logs"
+load_balancer_log_prefix: "storefront/prod"
+load_balancer_ssl_certificate_id: "1a2b3c4d-5e6f-7081-9223-a4b5c6d7e8f9"
+load_balancer_ssl_policy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
+
+port_mappings:
+  - name: "default"
+    from_port: 443
+    to_port: 8080
+    protocol: "HTTPS"
+    backend_protocol: "HTTP"
+    health_check:
+      path: "/actuator/health"
+      interval: 15
+      timeout: 5
+      healthy_threshold: 3
+      unhealthy_threshold: 5
+      matcher: "200"
+    stickiness:
+      enabled: true
+      duration: 3600
+      cookie: "lb_cookie"
+
+server_types: ["m6a.large", "m6i.large"]
+beanstalk_min_instances: 2
+beanstalk_max_instances: 8
+beanstalk_instance_volume_size: 30
+beanstalk_instance_volume_type: "gp3"
+beanstalk_default_retention: 30
+```
+
+### Multiple processes behind one environment
+
+```yaml
+port_mappings:
+  - name: "default"
+    from_port: 443
+    to_port: 8080
+    protocol: "HTTPS"
+    health_check:
+      path: "/health"
+  - name: "admin"
+    from_port: 8443
+    to_port: 9090
+    protocol: "HTTPS"
+    backend_protocol: "HTTP"
+    health_check:
+      path: "/admin/health"
+      matcher: "200-302"
+```
+
+### Shared load balancer with host-based routing
+
+Attach the environment to an ALB that already exists and is shared across environments:
+
+```yaml
+load_balancer_shared: true
+load_balancer_shared_name: "shared-prod-alb"
+load_balancer_shared_weight: 100
+
+port_mappings:
+  - name: "default"
+    from_port: 443
+    to_port: 8080
+    protocol: "HTTPS"
+  - name: "api"
+    from_port: 443
+    to_port: 9000
+    protocol: "HTTPS"
+    rules: ["api-host"]
+
+rule_mappings:
+  - name: "api-host"
+    process: "api"
+    host: "api.example.com"
+    path: "/*"
+    priority: 100
+```
+
+### Shared load balancer with advanced rule conditions
+
+Set `custom_shared_rules: true` to manage listener rules as native `aws_lb_listener_rule`
+resources, which unlocks path patterns, query strings, HTTP headers and source IP conditions:
+
+```yaml
+load_balancer_shared: true
+load_balancer_shared_name: "shared-prod-alb"
+custom_shared_rules: true
+
+port_mappings:
+  - name: "api"
+    from_port: 443
+    to_port: 9000
+    protocol: "HTTPS"
+
+rule_mappings:
+  - name: "api-canary"
+    process: "api"
+    host: "api.example.com,api-alt.example.com"
+    priority: 50
+    path_patterns: ["/v2/*"]
+    http_headers:
+      - name: "X-Canary"
+        values: ["true"]
+    source_ips: ["10.0.0.0/8"]
+```
+
+### Spot instances and dedicated security groups
+
+```yaml
+beanstalk_enable_spot: true
+beanstalk_spot_base_ondemand: 2
+beanstalk_spot_base_ondemand_percent: 25
+server_types: ["m6a.large", "m5a.large", "m5.large"]
+beanstalk_min_instances: 3
+beanstalk_max_instances: 12
+
+beanstalk_lb_sg:
+  - description: "HTTPS from the corporate network"
+    from_port: 443
+    to_port: 443
+    protocol: "tcp"
+    cidr_block: "10.0.0.0/8"
+
+beanstalk_target_sg:
+  - description: "App port from the load balancer"
+    from_port: 8080
+    to_port: 8080
+    protocol: "tcp"
+    security_group: "sg-0123456789abcdef0"
+```
+
+### Environment variables and raw option settings
+
+Anything the module does not model goes through `extra_settings`, applied last:
+
+```yaml
+extra_settings:
+  - namespace: "aws:elasticbeanstalk:application:environment"
+    name: "SPRING_PROFILES_ACTIVE"
+    value: "production"
+  - namespace: "aws:elasticbeanstalk:application:environment"
+    name: "JAVA_OPTS"
+    value: "-Xms1g -Xmx3g"
+  - namespace: "aws:elasticbeanstalk:command"
+    name: "DeploymentPolicy"
+    value: "Immutable"
+```
 
 
 
@@ -80,6 +490,7 @@ Available targets:
   help                                Help screen
   help/all                            Display help for all targets
   help/short                          This help short screen
+  init/%                              Initialize the project for a specific cloud provider: %S
   lint                                Lint terraform/opentofu code
   tag                                 Tag the current version
 
@@ -88,14 +499,15 @@ Available targets:
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 5.85 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.35 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.100.0 |
-| <a name="provider_null"></a> [null](#provider\_null) | 3.2.4 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.58.0 |
+| <a name="provider_null"></a> [null](#provider\_null) | 3.3.0 |
 
 ## Modules
 
@@ -125,6 +537,7 @@ No modules.
 | [aws_elastic_beanstalk_solution_stack.solution_stack](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/elastic_beanstalk_solution_stack) | data source |
 | [aws_lb.shared_lb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lb) | data source |
 | [aws_lb_listener.lb_listener](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lb_listener) | data source |
+| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
 ## Inputs
 
@@ -201,31 +614,28 @@ No modules.
 
 File a GitHub [issue](https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy/issues), send us an [email][email] or join our [Slack Community][slack].
 
-[![README Commercial Support][readme_commercial_support_img]][readme_commercial_support_link]
 
 ## DevOps Tools
+[Our Products](https://cloudopsworks.co/products/)
+[CI/CD Blueprint](https://cloudopsworks.co/cicd-blueprint/)
+[Open Source](https://cloudopsworks.co/open-source/)
 
 ## Slack Community
 
 
 ## Newsletter
-
-## Office Hours
-
-## Contributing
+[Resources Directory](https://cloudopsworks.co/resources/)
 
 ### Bug Reports & Feature Requests
 
 Please use the [issue tracker](https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy/issues) to report any bugs or file feature requests.
-
-### Developing
 
 
 
 
 ## Copyrights
 
-Copyright © 2024-2025 [Cloud Ops Works LLC](https://cloudops.works)
+Copyright © 2024-2026 [Cloud Ops Works LLC](https://cloudops.works)
 
 
 
@@ -282,32 +692,31 @@ This project is maintained by [Cloud Ops Works LLC][website].
 [![README Footer][readme_footer_img]][readme_footer_link]
 [![Beacon][beacon]][website]
 
-  [logo]: https://cloudops.works/logo-300x69.svg
-  [docs]: https://cowk.io/docs?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=docs
-  [website]: https://cowk.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=website
-  [github]: https://cowk.io/github?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=github
-  [jobs]: https://cowk.io/jobs?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=jobs
-  [hire]: https://cowk.io/hire?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=hire
-  [slack]: https://cowk.io/slack?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=slack
-  [linkedin]: https://cowk.io/linkedin?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=linkedin
-  [twitter]: https://cowk.io/twitter?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=twitter
-  [testimonial]: https://cowk.io/leave-testimonial?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=testimonial
-  [office_hours]: https://cloudops.works/office-hours?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=office_hours
-  [newsletter]: https://cowk.io/newsletter?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=newsletter
-  [email]: https://cowk.io/email?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=email
-  [commercial_support]: https://cowk.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=commercial_support
-  [we_love_open_source]: https://cowk.io/we-love-open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=we_love_open_source
-  [terraform_modules]: https://cowk.io/terraform-modules?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=terraform_modules
-  [readme_header_img]: https://cloudops.works/readme/header/img
-  [readme_header_link]: https://cloudops.works/readme/header/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=readme_header_link
-  [readme_footer_img]: https://cloudops.works/readme/footer/img
-  [readme_footer_link]: https://cloudops.works/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=readme_footer_link
-  [readme_commercial_support_img]: https://cloudops.works/readme/commercial-support/img
-  [readme_commercial_support_link]: https://cloudops.works/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=readme_commercial_support_link
-  [share_twitter]: https://twitter.com/intent/tweet/?text=Terraform+AWS+ElasticBeanstalk+Deployment+Module&url=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
+  [logo]: https://cloudopsworks.co/images/main-logo.png
+  [docs]: https://cloudopsworks.co/resources?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=docs
+  [website]: https://cloudopsworks.co?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=website
+  [github]: https://cloudopsworks.co/github?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=github
+  [jobs]: https://cloudopsworks.co/jobs?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=jobs
+  [hire]: https://cloudopsworks.co/hire?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=hire
+  [slack]: https://cloudopsworks.co/slack?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=slack
+  [linkedin]: https://cloudopsworks.co/linkedin?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=linkedin
+  [x]: https://cloudopsworks.co/x?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=x
+  [testimonial]: https://cloudopsworks.co/case-studies?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=testimonial
+  [office_hours]: https://cloudopsworks.co/office-hours?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=office_hours
+  [newsletter]: https://cloudopsworks.co/resources?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=newsletter
+  [email]: https://cloudopsworks.co/contact?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=email
+  [commercial_support]: https://cloudopsworks.co/services?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=commercial_support
+  [we_love_open_source]: https://cloudopsworks.co/open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=we_love_open_source
+  [terraform_modules]: https://cloudopsworks.co/open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=terraform_modules
+  [readme_header_img]: https://cloudopsworks.co/images/readme-header.png
+  [readme_header_link]: https://cloudopsworks.co/readme/header/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=readme_header_link
+  [readme_footer_img]: https://cloudopsworks.co/images/main-logo-footer.png
+  [readme_footer_link]: https://cloudopsworks.co/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=readme_footer_link
+  [readme_commercial_support_img]: https://cloudopsworks.co/readme/commercial-support/img
+  [readme_commercial_support_link]: https://cloudopsworks.co/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-aws-beanstalk-deploy&utm_content=readme_commercial_support_link
+  [share_twitter]: https://x.com/intent/tweet/?text=Terraform+AWS+ElasticBeanstalk+Deployment+Module&url=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
   [share_linkedin]: https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AWS+ElasticBeanstalk+Deployment+Module&url=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
   [share_reddit]: https://reddit.com/submit/?url=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
   [share_facebook]: https://facebook.com/sharer/sharer.php?u=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
-  [share_googleplus]: https://plus.google.com/share?url=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
   [share_email]: mailto:?subject=Terraform+AWS+ElasticBeanstalk+Deployment+Module&body=https://github.com/cloudopsworks/terraform-aws-beanstalk-deploy
-  [beacon]: https://ga-beacon.cloudops.works/G-7XWMFVFXZT/cloudopsworks/terraform-aws-beanstalk-deploy?pixel&cs=github&cm=readme&an=terraform-aws-beanstalk-deploy
+  [beacon]: https://ga-beacon.cloudopsworks.co/G-QMZVYYN2VN/cloudopsworks/terraform-aws-beanstalk-deploy?pixel&cs=github&cm=readme&an=terraform-aws-beanstalk-deploy
