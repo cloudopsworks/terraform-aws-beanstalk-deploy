@@ -3,8 +3,7 @@
   ** 
   ** This file was automatically generated. 
   ** 1) Make all changes to `README.yaml` 
-  ** 2) Run `make init` (you only need to do this once)
-  ** 3) Run`make readme` to rebuild this file. 
+  ** 2) Run `tronador readme build` to rebuild this file.
   -->
 [![README Header][readme_header_img]][readme_header_link]
 
@@ -548,14 +547,14 @@ Available targets:
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.35 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.35 |
 | <a name="provider_null"></a> [null](#provider\_null) | n/a |
 
@@ -566,7 +565,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_elastic_beanstalk_environment.beanstalk_environment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elastic_beanstalk_environment) | resource |
 | [aws_lb_listener_rule.lb_listener_rule](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener_rule) | resource |
 | [aws_security_group.instance_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
@@ -592,7 +591,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_application_version_label"></a> [application\_version\_label](#input\_application\_version\_label) | (required) Application version label to apply to environment | `string` | n/a | yes |
 | <a name="input_beanstalk_ami_id"></a> [beanstalk\_ami\_id](#input\_beanstalk\_ami\_id) | (optional) Fix AMI which elasticbeanstalk is based on | `string` | `""` | no |
 | <a name="input_beanstalk_application"></a> [beanstalk\_application](#input\_beanstalk\_application) | (required) Beanstalk application name to deploy to. | `string` | n/a | yes |
@@ -642,7 +641,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_environment_cname"></a> [environment\_cname](#output\_environment\_cname) | n/a |
 | <a name="output_environment_endpoint_url"></a> [environment\_endpoint\_url](#output\_environment\_endpoint\_url) | n/a |
 | <a name="output_environment_id"></a> [environment\_id](#output\_environment\_id) | n/a |
