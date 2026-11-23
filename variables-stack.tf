@@ -14,7 +14,9 @@ variable "solution_stack" {
   nullable    = false
   description = <<-EOT
     (Optional) Elastic Beanstalk solution stack. The default, "java", selects Corretto 21 on Amazon Linux 2023. An empty string also selects this default.
-    The "node" shortcut selects Node.js 24 on Amazon Linux 2023. Use "node20" for the retired Node.js 20 branch where AWS still offers it.
+    On Amazon Linux 2023, "java", "node", "dotnet" and "python" select "java21", "node24", "dotnet10" and "python314", respectively. "dotnet-10" also selects "dotnet10".
+    "tomcat" selects "tomcat11j21" (Tomcat 11 with Corretto 21).
+    "php" and "ruby" follow "php-latest" and "ruby-latest". "docker" selects "docker_al2023", and "docker-m" selects "ecs".
     Use a branch key such as "java25", "tomcat11j25", "node26", "python315", "dotnet-10", "php85", "ruby40", "go", "docker_al2023", "ecs" or "dotnet-w25" to select the most recent matching regional version.
     Family keys ending in "-latest" follow the branch selected by this module release. A complete AWS stack name pins a platform version. Custom regular expressions are also accepted.
     Older shortcuts targeting retired platforms are deprecated. See "Choosing a platform" in the README for all keys, retirement dates and migration targets.

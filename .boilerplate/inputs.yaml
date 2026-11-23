@@ -28,18 +28,18 @@ beanstalk_application: "myapp"   # (Required) Existing Elastic Beanstalk applica
 ## Amazon Linux 2023 branch keys:
 ##   Java: java8_23, java11_23, java17_23, java21 (also java), java25
 ##   Tomcat: tomcat9j8, tomcat9j11, tomcat9j17, tomcat10j17, tomcat10j21,
-##           tomcat11j17, tomcat11j21, tomcat11j25
-##   Node.js: node22, node24 (also node), node26; Python: python311, python312, python313 (also python), python314, python315
-##   .NET: dotnet-8, dotnet-9 (also dotnet), dotnet-10; PHP: php82, php83, php84, php85; Ruby: ruby33, ruby34, ruby40
-##   Go and containers: go, docker_al2023, ecs
+##           tomcat11j17, tomcat11j21 (also tomcat), tomcat11j25
+##   Node.js: node22, node24 (also node), node26; Python: python311, python312, python313, python314 (also python), python315
+##   .NET: dotnet-8, dotnet-9, dotnet10 (also dotnet and dotnet-10); PHP: php82, php83, php84, php85; Ruby: ruby33, ruby34, ruby40
+##   Go and containers: go, docker_al2023 (also docker), ecs (also docker-m)
 ## Windows Server: dotnet-w19, dotnet-w22, dotnet-w25; Server Core: net-core-w19, net-core-w22, net-core-w25
 ## Latest shortcuts may advance branches with a module upgrade:
 ##   java-latest (25), tomcat-latest (11/Corretto 25), node-latest (26), python-latest (3.15),
-##   dotnet-latest (10), php-latest (8.5), ruby-latest (4.0)
-## Compatibility: tomcat and tomcatj17 can match multiple Tomcat majors on Corretto 21 and 17 respectively.
-## AWS has scheduled dotnet-8, dotnet-9 (also dotnet), php82, node22 and ruby33 for retirement.
+##   dotnet-latest (10), php-latest (8.5, also php), ruby-latest (4.0, also ruby)
+## The tomcatj17 shortcut can match multiple Tomcat majors on Corretto 17.
+## AWS has scheduled dotnet-8, dotnet-9, php82, node22 and ruby33 for retirement.
 ## Deprecated retired targets: java8, java11, java17, tomcatj8, tomcatj11, node14, node16, node18, node20,
-##   node18_23, python37, python38, python39, dotnet-core, dotnet-6, go_al2, docker, docker-m, dotnet-w16, net-core-w16.
+##   node18_23, python37, python38, python39, dotnet-core, dotnet-6, go_al2, dotnet-w16, net-core-w16.
 ## See the module README for replacements. Availability depends on your account and region.
 #solution_stack: "java"          # (Optional) Default: "java" (Corretto 21 on Amazon Linux 2023). An empty string also selects java.
 

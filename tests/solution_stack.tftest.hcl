@@ -93,6 +93,44 @@ run "branch_aliases" {
   }
 }
 
+run "family_shortcuts" {
+  command = plan
+  variables {
+    solution_stack = "docker-m"
+  }
+  assert {
+    condition = alltrue([for alias, target in {
+      node      = "node24"
+      dotnet    = "dotnet10"
+      dotnet-10 = "dotnet10"
+      java      = "java21"
+      tomcat    = "tomcat11j21"
+      python    = "python314"
+      php       = "php-latest"
+      ruby      = "ruby-latest"
+      docker    = "docker_al2023"
+      docker-m  = "ecs"
+    } : try(local.solutions[alias] == local.solutions[target], false)])
+    error_message = "Each family shortcut must use the same AWS stack pattern as its target."
+  }
+  assert {
+    condition = (
+      can(regex(local.solutions["tomcat"], "64bit Amazon Linux 2023 v5.15.3 running Tomcat 11 Corretto 21")) &&
+      !can(regex(local.solutions["tomcat"], "64bit Amazon Linux 2023 v5.15.3 running Tomcat 10 Corretto 21")) &&
+      !can(regex(local.solutions["tomcat"], "64bit Amazon Linux 2023 v5.15.3 running Tomcat 11 Corretto 25"))
+    )
+    error_message = "The tomcat shortcut must select Tomcat 11 with Corretto 21."
+  }
+  assert {
+    condition = (
+      can(regex(local.solutions["dotnet10"], "64bit Amazon Linux 2023 v3.0.0 running .NET 10")) &&
+      can(regex(data.aws_elastic_beanstalk_solution_stack.solution_stack.name_regex, "64bit Amazon Linux 2023 v4.0.0 running ECS")) &&
+      !can(regex(data.aws_elastic_beanstalk_solution_stack.solution_stack.name_regex, "64bit Amazon Linux 2 v4.0.0 running ECS"))
+    )
+    error_message = "dotnet10 must select .NET 10, and docker-m must look up ECS on Amazon Linux 2023."
+  }
+}
+
 run "full_name_pin" {
   command = plan
   variables {
