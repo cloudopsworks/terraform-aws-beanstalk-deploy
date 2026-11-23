@@ -49,6 +49,7 @@ locals {
 
   branch_aliases = {
     java   = "java21"
+    node   = "node24"
     python = "python313"
     dotnet = "dotnet-9"
 
@@ -94,7 +95,7 @@ locals {
     node16       = "${local.al2_prefix}Node[.]js 16$"
     node18       = "${local.al2_prefix}Node[.]js 18$"
     node18_23    = "${local.al2023_prefix}Node[.]js 18$"
-    node         = "${local.al2023_prefix}Node[.]js 20$"
+    node20       = "${local.al2023_prefix}Node[.]js 20$"
     python37     = "${local.al2_prefix}Python 3[.]7$"
     python38     = "${local.al2_prefix}Python 3[.]8$"
     python39     = "${local.al2023_prefix}Python 3[.]9$"

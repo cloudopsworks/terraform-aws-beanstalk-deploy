@@ -43,6 +43,20 @@ run "empty_uses_default" {
   }
 }
 
+run "node_family_default" {
+  command = plan
+  variables {
+    solution_stack = "node"
+  }
+  assert {
+    condition = (
+      can(regex(data.aws_elastic_beanstalk_solution_stack.solution_stack.name_regex, "64bit Amazon Linux 2023 v6.12.3 running Node.js 24")) &&
+      !can(regex(data.aws_elastic_beanstalk_solution_stack.solution_stack.name_regex, "64bit Amazon Linux 2023 v6.12.3 running Node.js 26"))
+    )
+    error_message = "The node shortcut must select Node.js 24 on Amazon Linux 2023."
+  }
+}
+
 run "branch_aliases" {
   command = plan
   variables {
@@ -69,6 +83,7 @@ run "branch_aliases" {
   assert {
     condition = (
       can(regex(local.solutions["dotnet-w25"], "64bit Windows Server 2025 v2.23.10 running IIS 10.0")) &&
+      can(regex(local.solutions["node20"], "64bit Amazon Linux 2023 v6.12.3 running Node.js 20")) &&
       can(regex(local.solutions["java17"], "64bit Amazon Linux 2 v3.6.0 running Corretto 17")) &&
       !can(regex(local.solutions["java17"], "64bit Amazon Linux 2023 v4.14.3 running Corretto 17")) &&
       !can(regex(local.solutions["tomcat11j25"], "64bit Amazon Linux 2023 v5.15.3 running Tomcat 10 Corretto 25")) &&
