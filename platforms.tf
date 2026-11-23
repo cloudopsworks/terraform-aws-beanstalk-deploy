@@ -34,7 +34,7 @@ locals {
     python315     = "Python 3.15"
     dotnet-8      = ".NET 8"
     dotnet-9      = ".NET 9"
-    dotnet-10     = ".NET 10"
+    dotnet10      = ".NET 10"
     php82         = "PHP 8.2"
     php83         = "PHP 8.3"
     php84         = "PHP 8.4"
@@ -47,19 +47,28 @@ locals {
     ecs           = "ECS"
   }
 
-  branch_aliases = {
-    java   = "java21"
-    python = "python313"
-    dotnet = "dotnet-9"
-
+  latest_branches = {
     java-latest   = "java25"
     tomcat-latest = "tomcat11j25"
     node-latest   = "node26"
     python-latest = "python315"
-    dotnet-latest = "dotnet-10"
+    dotnet-latest = "dotnet10"
     php-latest    = "php85"
     ruby-latest   = "ruby40"
   }
+
+  branch_aliases = merge(local.latest_branches, {
+    node      = "node24"
+    dotnet    = "dotnet10"
+    dotnet-10 = "dotnet10"
+    java      = "java21"
+    tomcat    = "tomcat11j21"
+    python    = "python314"
+    php       = local.latest_branches["php-latest"]
+    ruby      = local.latest_branches["ruby-latest"]
+    docker    = "docker_al2023"
+    docker-m  = "ecs"
+  })
 
   stack_version = "v[0-9]+([.][0-9]+)+"
   al2023_prefix = "^64bit Amazon Linux 2023 ${local.stack_version} running "
@@ -68,9 +77,8 @@ locals {
     for key, runtime in local.al2023_branches : key => "${local.al2023_prefix}\\Q${runtime}\\E$"
   }
 
-  # These original shortcuts select a Corretto major across Tomcat branches.
+  # The legacy tomcatj17 shortcut matches Corretto 17 across Tomcat branches.
   tomcat_stacks = {
-    tomcat    = "${local.al2023_prefix}Tomcat [0-9.]+ Corretto 21$"
     tomcatj17 = "${local.al2023_prefix}Tomcat [0-9.]+ Corretto 17$"
   }
 
@@ -94,13 +102,11 @@ locals {
     node16       = "${local.al2_prefix}Node[.]js 16$"
     node18       = "${local.al2_prefix}Node[.]js 18$"
     node18_23    = "${local.al2023_prefix}Node[.]js 18$"
-    node         = "${local.al2023_prefix}Node[.]js 20$"
+    node20       = "${local.al2023_prefix}Node[.]js 20$"
     python37     = "${local.al2_prefix}Python 3[.]7$"
     python38     = "${local.al2_prefix}Python 3[.]8$"
     python39     = "${local.al2023_prefix}Python 3[.]9$"
     go_al2       = "${local.al2_prefix}Go 1$"
-    docker       = "${local.al2_prefix}Docker( .*)?$"
-    docker-m     = "${local.al2_prefix}(ECS|Multi-container Docker( .*)?)$"
     dotnet-core  = "${local.al2_prefix}[.]NET Core$"
     dotnet-6     = "${local.al2023_prefix}[.]NET 6$"
     dotnet-w16   = "^64bit Windows Server 2016 ${local.stack_version} running IIS 10[.]0$"

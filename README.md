@@ -82,24 +82,34 @@ To pin one platform version, supply the complete AWS solution stack name from
 regular expressions also work. The default and the empty string both select `java`
 (Corretto 21 on Amazon Linux 2023).
 
-| Family | Branch keys on Amazon Linux 2023 | Latest shortcut and target |
+| Family | Branch keys on Amazon Linux 2023 | Shortcuts and targets |
 |---|---|---|
-| Java | `java8_23`, `java11_23`, `java17_23`, `java21`, `java25` | `java-latest` → `java25` |
-| Tomcat (server major and Corretto major) | `tomcat9j8`, `tomcat9j11`, `tomcat9j17`, `tomcat10j17`, `tomcat10j21`, `tomcat11j17`, `tomcat11j21`, `tomcat11j25` | `tomcat-latest` → `tomcat11j25` |
-| Node.js | `node22`, `node24`, `node26` | `node-latest` → `node26` |
-| Python | `python311`, `python312`, `python313`, `python314`, `python315` | `python-latest` → `python315` |
-| .NET | `dotnet-8`, `dotnet-9`, `dotnet-10` | `dotnet-latest` → `dotnet-10` |
-| PHP | `php82`, `php83`, `php84`, `php85` | `php-latest` → `php85` |
-| Ruby | `ruby33`, `ruby34`, `ruby40` | `ruby-latest` → `ruby40` |
-| Go and containers | `go`, `docker_al2023`, `ecs` | Each key tracks its own branch |
+| Java | `java8_23`, `java11_23`, `java17_23`, `java21`, `java25` | `java` → `java21`, `java-latest` → `java25` |
+| Tomcat (server major and Corretto major) | `tomcat9j8`, `tomcat9j11`, `tomcat9j17`, `tomcat10j17`, `tomcat10j21`, `tomcat11j17`, `tomcat11j21`, `tomcat11j25` | `tomcat` → `tomcat11j21`, `tomcat-latest` → `tomcat11j25` |
+| Node.js | `node22`, `node24`, `node26` | `node` → `node24`, `node-latest` → `node26` |
+| Python | `python311`, `python312`, `python313`, `python314`, `python315` | `python` → `python314`, `python-latest` → `python315` |
+| .NET | `dotnet-8`, `dotnet-9`, `dotnet10` (also `dotnet-10`) | `dotnet` and `dotnet-latest` → `dotnet10` |
+| PHP | `php82`, `php83`, `php84`, `php85` | `php` → `php-latest` → `php85` |
+| Ruby | `ruby33`, `ruby34`, `ruby40` | `ruby` → `ruby-latest` → `ruby40` |
+| Go and containers | `go`, `docker_al2023`, `ecs` | `docker` → `docker_al2023`, `docker-m` → `ecs` |
 
 On Windows, use `dotnet-w19`, `dotnet-w22`, or `dotnet-w25` for Windows Server
 and `net-core-w19`, `net-core-w22`, or `net-core-w25` for Server Core.
-Existing `python` selects Python 3.13. The `tomcat` and `tomcatj17` keys select
-Corretto 21 and 17 respectively across matching Tomcat majors. Choose a Tomcat key
-that names both majors when your application requires a particular servlet API.
+The `tomcatj17` key selects Corretto 17 across matching Tomcat majors.
 
 ### Migrating deprecated shortcuts
+
+In v1.3.1, `solution_stack: node` selected Node.js 20. The same input now selects Node.js 24.
+If your application still requires Node.js 20 and AWS lists the retired branch for your
+environment, set `solution_stack: node20` when updating the module.
+
+The `python` and `dotnet` shortcuts move from Python 3.13 and .NET 9 to Python 3.14 and .NET 10.
+Pin `python313` or `dotnet-9` to keep the previous runtime. The `docker` and `docker-m` shortcuts
+move from Amazon Linux 2 to Docker and ECS on Amazon Linux 2023, respectively. To keep a
+specific Amazon Linux 2 stack while AWS still offers it, supply its full solution stack name.
+
+The `tomcat` shortcut now selects Tomcat 11 with Corretto 21. Applications that used
+this shortcut for Tomcat 10 with Corretto 21 can pin `tomcat10j21`.
 
 Retired shortcuts retain their historical targets. A lookup can fail if AWS no longer
 lists the stack for your account and region. Choose a compatible replacement in the table.
@@ -108,13 +118,13 @@ lists the stack for your account and region. Choose a compatible replacement in 
 |---|---|
 | `java8`, `java11`, `java17` | `java8_23`, `java11_23`, `java17_23` preserve the Corretto major |
 | `tomcatj8`, `tomcatj11` | `tomcat9j8`, `tomcat9j11` |
-| `node` (20), `node14`, `node16`, `node18`, `node18_23` | `node24` or `node26` |
+| `node14`, `node16`, `node18`, `node18_23`, `node20` | `node24` or `node26` |
 | `python37`, `python38`, `python39` | A supported Python branch such as `python314` |
 | `dotnet-core`, `dotnet-6` | `dotnet-10` |
-| `go_al2`, `docker`, `docker-m` | `go`, `docker_al2023`, `ecs` respectively |
+| `go_al2` | `go` |
 | `dotnet-w16`, `net-core-w16` | A supported Windows Server or Server Core branch |
 
-As of November 2026, AWS also schedules `dotnet-8`, `dotnet-9` (including `dotnet`),
+As of November 2026, AWS also schedules `dotnet-8`, `dotnet-9`,
 and `php82` for retirement on March 31, 2027, and `node22` and `ruby33` on July 31, 2027.
 Check current dates before choosing a branch. [Supported platforms](https://docs.aws.amazon.com/elasticbeanstalk/latest/platforms/platforms-supported.html) · [Retirement schedule](https://docs.aws.amazon.com/elasticbeanstalk/latest/platforms/platforms-retiring.html)
 
@@ -633,7 +643,7 @@ No modules.
 | <a name="input_release_name"></a> [release\_name](#input\_release\_name) | (required) The Release Name that will be used to name all resources. | `string` | n/a | yes |
 | <a name="input_rule_mappings"></a> [rule\_mappings](#input\_rule\_mappings) | (optional) Mappings of Load balancer ports. | `any` | `[]` | no |
 | <a name="input_server_types"></a> [server\_types](#input\_server\_types) | (optional) EC2 instance type list, first item will be used on on-demand instances. | `list(string)` | <pre>[<br/>  "t3a.micro"<br/>]</pre> | no |
-| <a name="input_solution_stack"></a> [solution\_stack](#input\_solution\_stack) | (Optional) Elastic Beanstalk solution stack. The default, "java", selects Corretto 21 on Amazon Linux 2023. An empty string also selects this default.<br/>Use a branch key such as "java25", "tomcat11j25", "node26", "python315", "dotnet-10", "php85", "ruby40", "go", "docker\_al2023", "ecs" or "dotnet-w25" to select the most recent matching regional version.<br/>Family keys ending in "-latest" follow the branch selected by this module release. A complete AWS stack name pins a platform version. Custom regular expressions are also accepted.<br/>Older shortcuts targeting retired platforms are deprecated. See "Choosing a platform" in the README for all keys, retirement dates and migration targets. | `string` | `"java"` | no |
+| <a name="input_solution_stack"></a> [solution\_stack](#input\_solution\_stack) | (Optional) Elastic Beanstalk solution stack. The default, "java", selects Corretto 21 on Amazon Linux 2023. An empty string also selects this default.<br/>On Amazon Linux 2023, "java", "node", "dotnet" and "python" select "java21", "node24", "dotnet10" and "python314", respectively. "dotnet-10" also selects "dotnet10".<br/>"tomcat" selects "tomcat11j21" (Tomcat 11 with Corretto 21).<br/>"php" and "ruby" follow "php-latest" and "ruby-latest". "docker" selects "docker\_al2023", and "docker-m" selects "ecs".<br/>Use a branch key such as "java25", "tomcat11j25", "node26", "python315", "dotnet-10", "php85", "ruby40", "go", "docker\_al2023", "ecs" or "dotnet-w25" to select the most recent matching regional version.<br/>Family keys ending in "-latest" follow the branch selected by this module release. A complete AWS stack name pins a platform version. Custom regular expressions are also accepted.<br/>Older shortcuts targeting retired platforms are deprecated. See "Choosing a platform" in the README for all keys, retirement dates and migration targets. | `string` | `"java"` | no |
 | <a name="input_sts_assume_role"></a> [sts\_assume\_role](#input\_sts\_assume\_role) | n/a | `string` | n/a | yes |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | (required) VPC ID where the instance will run. | `string` | n/a | yes |
 | <a name="input_wait_for_ready_timeout"></a> [wait\_for\_ready\_timeout](#input\_wait\_for\_ready\_timeout) | (optional) Time in minutes to wait for the environment to be ready. Default: 10 minutes. | `string` | `"20m"` | no |
